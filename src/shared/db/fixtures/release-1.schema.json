@@ -1,0 +1,17 @@
+{
+  "migration": "20261021203227_init",
+  "schema": [
+    {
+      "type": "index",
+      "name": "notes_created_idx",
+      "tbl": "notes",
+      "sql": "CREATE INDEX `notes_created_idx` ON `notes` (`created_at`)"
+    },
+    {
+      "type": "table",
+      "name": "notes",
+      "tbl": "notes",
+      "sql": "CREATE TABLE `notes` (\n\t`id` text PRIMARY KEY,\n\t`title` text NOT NULL,\n\t`body` text DEFAULT '' NOT NULL,\n\t`created_at` integer NOT NULL\n)"
+    }
+  ]
+}
