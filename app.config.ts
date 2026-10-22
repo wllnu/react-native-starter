@@ -32,6 +32,9 @@ const config: ExpoConfig = {
   name: variant === "production" ? app.name : `${app.name} (${variant})`,
   slug: app.slug,
   version: "1.0.0",
+  // OTA updates only target builds with identical native code. The fingerprint policy hashes the native
+  // dependency graph, so an update can never land on a binary it does not match.
+  runtimeVersion: { policy: "fingerprint" },
   orientation: "portrait",
   icon: "./assets/images/icon.png",
   scheme: app.scheme,
