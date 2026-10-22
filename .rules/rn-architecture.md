@@ -5,42 +5,6 @@ paths: **/*.ts, **/*.tsx
 when: The change adds or edits React Native app code such as features, hooks, stores, routes, screens, or data access.
 ---
 
-## rn-architecture/feature-public-api
-Severity: error
-Rule: Import another feature only through its `index.ts`.
-Violated when: a file outside `features/<name>/` imports from a path deeper than the feature folder, such as `@/features/notes/store` or `../notes/hooks/useNotes`.
-Followed when: every import of another feature in the changed lines ends at the feature folder, such as `@/features/notes`.
-
-Good:
-```tsx
-// src/app/(tabs)/index.tsx
-import { useNotes } from "@/features/notes";
-```
-
-Bad:
-```tsx
-// src/app/(tabs)/index.tsx
-import { useNotes } from "@/features/notes/hooks/useNotes";
-```
-
-## rn-architecture/dependency-direction
-Severity: error
-Rule: Keep imports pointing down from `app` to `features` to `shared`.
-Violated when: a file under `shared/` imports from `features/` or `app/`, or a file under `features/` imports from `app/`.
-Followed when: a file under `shared/` imports only from `shared/` or packages, and a file under `features/` imports only from `features/`, `shared/` or packages.
-
-Good:
-```ts
-// src/shared/api/client.ts
-import { mapError } from "@/shared/api/errors";
-```
-
-Bad:
-```ts
-// src/shared/api/client.ts
-import { useSessionStore } from "@/features/auth";
-```
-
 ## rn-architecture/no-io-in-components
 Severity: error
 Rule: Reach HTTP, SQL and storage from a component only through a feature hook.
@@ -145,11 +109,11 @@ export const useNoteStore = create<NoteState>((set) => ({
 }));
 ```
 
-## rn-architecture/store-selectors
-Severity: warning
-Rule: Read a Zustand store through a selector.
-Violated when: a Zustand store hook such as `useSettingsStore()` is called with no selector argument.
-Followed when: every Zustand store hook call in the changed lines passes a selector function.
+## rn-architecture/stable-selector-output
+Severity: error
+Rule: Return a single value from a Zustand selector, or wrap an object or array result in `useShallow`.
+Violated when: a selector passed to a Zustand store hook such as `useSettingsStore(` returns an object literal or array literal, or calls `.filter(` or `.map(`, and is not wrapped in `useShallow(`.
+Followed when: every selector in the changed lines returns one field, or is wrapped in `useShallow(`.
 
 Good:
 ```tsx
@@ -158,7 +122,7 @@ const unit = useSettingsStore((state) => state.unit);
 
 Bad:
 ```tsx
-const { unit } = useSettingsStore();
+const { unit, theme } = useSettingsStore((state) => ({ unit: state.unit, theme: state.theme }));
 ```
 
 ## rn-architecture/live-queries

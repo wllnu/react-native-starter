@@ -37,26 +37,10 @@ Bad:
 storage.set("refreshToken", refreshToken);
 ```
 
-## rn-security/no-async-storage
-Severity: warning
-Rule: Do not use AsyncStorage in new code.
-Violated when: an import path is `@react-native-async-storage/async-storage`, or `AsyncStorage` is imported from `react-native`.
-Followed when: key-value reads and writes in the changed lines go through the app's storage wrapper and no AsyncStorage import appears.
-
-Good:
-```ts
-import { storage } from "@/shared/storage";
-```
-
-Bad:
-```ts
-import AsyncStorage from "@react-native-async-storage/async-storage";
-```
-
 ## rn-security/no-sensitive-logs
 Severity: error
 Rule: Never log passwords, tokens, authorization headers, card data or private user records.
-Violated when: a `console.` call, a `logger.` call or a monitoring breadcrumb receives a password, a token, request headers, card data, or a whole user or message record.
+Violated when: a `console.warn(` or `console.error(` call, a `logger.` call, or a monitoring call such as `Sentry.addBreadcrumb(` or `Sentry.captureMessage(`, receives a password, a token, request headers, card data, or a whole user or message record.
 Followed when: log and breadcrumb calls in the changed lines pass only identifiers, counts, statuses and error kinds.
 
 Good:
@@ -67,22 +51,6 @@ logger.info("session refreshed", { userId: session.userId });
 Bad:
 ```ts
 logger.info("session refreshed", { refreshToken: session.refreshToken });
-```
-
-## rn-security/https-only
-Severity: error
-Rule: Use HTTPS for every network URL.
-Violated when: a string literal in the changed lines starts with `http://`.
-Followed when: every URL literal in the changed lines starts with `https://`.
-
-Good:
-```ts
-const fallbackApiUrl = "https://api.example.com";
-```
-
-Bad:
-```ts
-const fallbackApiUrl = "http://api.example.com";
 ```
 
 ## rn-security/no-tokens-in-links

@@ -1,43 +1,56 @@
-UI work: follow DESIGN.md. Verify with `node design/check.mjs` (checks your diff) and nothing else. Don't write your own design checks. After editing DESIGN.md, run `node design/check.mjs build`.
+Expo starter app for iOS and Android.
 
-This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
+## Stack
 
-## Expo has changed — do not trust your training data
+Expo SDK 57 (`expo` ~57.0.31), React Native 0.86.3, React 19.2.3, Expo Router ~57.0.29 with typed routes, TypeScript ~6.0.3 (strict), React Compiler. Zustand 5 for client state, Drizzle 1.0 rc on `expo-sqlite` for records, MMKV 4 for settings, Zod 4 at every boundary. Jest with `jest-expo` and React Native Testing Library 14. pnpm.
 
-Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
+Continuous Native Generation: `ios/` and `android/` are build output. Never create or edit them. Native config goes in `app.config.ts` and config plugins. A library with native code needs a development build (`pnpm ios`), not Expo Go.
 
-1. Read the major version of the `expo` package in `package.json`.
-2. Fetch the matching versioned docs: `https://docs.expo.dev/versions/v<major>.0.0/`
-3. For anything else, fetch https://docs.expo.dev/llms.txt — an index of all Expo docs with corrections to common LLM misconceptions. Follow its links to the specific page you need; never answer from memory.
+## Expo has changed, do not trust your training data
+
+Expo ships breaking changes every SDK release. Before writing code that touches an Expo, EAS or React Native API:
+
+1. Fetch the versioned docs for SDK 57: `https://docs.expo.dev/versions/v57.0.0/`
+2. For anything else, fetch https://docs.expo.dev/llms.txt. It indexes all Expo docs and corrects common LLM mistakes. Follow its links to the page you need. Never answer from memory.
 
 ## Commands
 
-Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
-
 ```bash
-npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
-npx expo start              # start the dev server
-npx expo lint               # lint
-npx tsc --noEmit            # typecheck
-npx expo-doctor             # diagnose dependency and config issues
-npx expo install --fix      # fix incompatible package versions
+npx expo install <package>  # the only way to add a package, it picks SDK-compatible versions
+pnpm lint                   # ESLint
+pnpm typecheck              # tsc --noEmit
+pnpm test                   # Jest
+npx expo-doctor             # dependency and config problems
+node design/check.mjs       # design system check on your diff
 ```
 
-Run lint and typecheck before declaring any task done.
-
-## Navigation & Routing
-
-- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
-- Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
-- Docs: https://docs.expo.dev/router/introduction.md
-
-## Building with EAS
-
-Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
-Docs: https://docs.expo.dev/eas/index.md
+EAS CLI runs as `npx eas-cli@latest <command>`.
 
 ## Rules
 
-- If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
-- Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
-- Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+Read the files that match your change before you edit. paseo-rules judges every diff against `.rules/` after each turn and reports the rule ID it broke.
+
+| You are changing | Read |
+|---|---|
+| Any `.ts` or `.tsx` under `src/` | `.rules/rn-architecture.md`, `.rules/rn-security.md` |
+| Components, lists, animations | `.rules/rn-ui.md`, `.rules/rn-accessibility.md`, `.rules/rn-platform.md` |
+| Screens, styles, colours, spacing | `DESIGN.md` (also load the `ui-design` skill) |
+| Tests (`*.test.ts(x)`) | `.rules/rn-testing.md` |
+| Purchases, paywall, paid features | `.rules/rn-monetization.md` |
+| `package.json`, `app.config.ts`, config plugins | `.rules/rn-native-deps.md`, `.rules/rn-store-compliance.md` |
+| Anything app-wide (error boundaries, startup, strings, migrations) | `RULES.md` |
+
+Routes live in `src/app/`. Every file there is a screen. Everything else goes in `src/features/<name>/` (imported only through its `index.ts`) or `src/shared/`. `src/features/notes` is the reference feature. Copy its layout.
+
+UI work: verify with `node design/check.mjs` and nothing else. Don't write your own design checks or render screens. After editing `DESIGN.md`, run `node design/check.mjs build`.
+
+When a check fails, fix the cause. Never disable, skip or delete the check or its test. An `eslint-disable` comment needs a reason after `--`.
+
+## Definition of done
+
+`pnpm lint`, `pnpm typecheck` and `pnpm test` pass. End every task with:
+
+```
+Verified: <commands run>
+Not verified: <anything skipped and why>
+```

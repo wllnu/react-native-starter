@@ -1,6 +1,6 @@
 # Turn Overload into an agentic React Native starter kit
 
-Status: step 1 done (2026-10-21). Steps 2 to 8 not started.
+Status: step 1 done (2026-10-21). Step 2 done (2026-10-22). Steps 3 to 8 not started.
 Written 2026-10-21 against `overload/` (Expo SDK 57, React Native 0.86, Expo Router, pnpm) and `Agentic Coding Guardrails for React Native.md`.
 
 ## Goal
@@ -93,6 +93,15 @@ Written with the `write-ruleset` skill so they match the existing format. Only r
 - `rn-store-compliance`: usage strings for every permission, privacy manifest updated with every SDK, account deletion when there are accounts, no private APIs.
 
 `RULES.md` has the rules no single diff can prove. Most of them become rules for the reviewer agent in step 5. The few that map to a ruleset move there (privacy manifest to `rn-store-compliance`, `CADisableMinimumFrameDurationOnPhone` to the config test).
+
+### What step 2 shipped (2026-10-22)
+
+- `AGENTS.md` is the router. It lists `pnpm lint`, `typecheck` and `test` because `pnpm verify` doesn't exist yet. Step 3 swaps in `pnpm verify`, step 5 adds `verify:visual` and the full definition of done.
+- Removed from `.rules/` and not enforced until step 3 lands: every rule in the first three rows of the table, plus `rn-ui/font-scaling` (a single attribute check, so it went to lint after all). `rn-app-config.md` and `rn-tsconfig.md` are deleted. The removed prose, with the reasons for the lint messages, is in `70f336b`.
+- Renamed: `rn-architecture/store-selectors` is now the lint ID for a store hook called with no selector. The prose rule is `rn-architecture/stable-selector-output` (an object or array selector without `useShallow`). `rn-ui/accessibility-label-role` became `rn-accessibility/touchable-label` (label only). Lint owns the role part as `rn-accessibility/touchable-role`.
+- New lint items for step 3: `Platform.OS ===` ternaries (use `Platform.select`), `react-native-purchases` imported outside `src/features/pro/`, index keys (`react/no-array-index-key`), and the `rn-native-deps/expo-module-first` package list, which is a deny-list that `verify` could check in place of the classifier.
+- Left to `RULES.md` or the step 5 reviewer: New Architecture support and a stated reason for every new dependency, a privacy manifest update for every new SDK, account deletion, no private APIs, reading order.
+- Found, not fixed: `rn-architecture/no-server-data-in-store` tells agents to use TanStack Query, which isn't installed, and `rn-ui/stable-list-keys` uses FlashList in its examples, which isn't installed either.
 
 ## Step 3. Deterministic checks
 
