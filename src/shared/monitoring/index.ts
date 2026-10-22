@@ -2,6 +2,7 @@ import * as Sentry from '@sentry/react-native';
 import Constants from 'expo-constants';
 import { z } from 'zod';
 import { create } from 'zustand';
+import { env } from '../env';
 import { storage } from '../storage';
 
 const REPORTS_KEY = 'monitoring.reports';
@@ -45,13 +46,14 @@ export function scrubBreadcrumb<T extends { category?: string }>(breadcrumb: T):
 
 /** Build variant from the Expo config, so events know which build they came from. */
 function variant(): string {
-  const value = Constants.expoConfig?.extra?.variant;
+  // ExpoConfig.extra is `Record<string, any>`, so the value is unknown until the string check narrows it.
+  const value: unknown = Constants.expoConfig?.extra?.variant;
   return typeof value === 'string' ? value : 'production';
 }
 
 /** Starts Sentry. Does nothing useful without a DSN or when the user turned reports off. Safe to call again. */
 export function startMonitoring(): void {
-  const dsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
+  const dsn = env('EXPO_PUBLIC_SENTRY_DSN');
   if (started || closing || !dsn || !reportsEnabled()) return;
   Sentry.init({
     dsn,

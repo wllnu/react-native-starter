@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react-native';
 import { Platform } from 'react-native';
 import { storage } from '@/shared/storage';
+import { env } from '@/shared/env';
 import { z } from 'zod';
 import { PRO_KEY, getIsPro, paywallEnabled, setPro, useIsPro } from './store';
 
@@ -46,7 +47,7 @@ describe('paywallEnabled', () => {
 
   it('is off on iOS without a RevenueCat key, so nobody sees a paywall that cannot sell', () => {
     jest.replaceProperty(Platform, 'OS', 'ios');
-    const key = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY;
+    const key = env('EXPO_PUBLIC_REVENUECAT_IOS_KEY');
     delete process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY;
     try {
       expect(paywallEnabled()).toBe(false);

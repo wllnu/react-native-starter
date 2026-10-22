@@ -14,7 +14,11 @@ export function useTheme() {
 }
 
 /** Smallest tappable size on this platform. */
-export const touchMin = Platform.OS === "android" ? sizes["touch-min-android"] : sizes["touch-min"];
+export const touchMin = Platform.select({
+  // Android's touch targets are the largest, per the platform ruleset.
+  android: sizes["touch-min-android"],
+  default: sizes["touch-min"],
+});
 
 /** shadow-card: a 1px lift under cards in light mode, off in dark mode and on Android (DESIGN.md allows dropping it there). */
 export function useCardShadow() {

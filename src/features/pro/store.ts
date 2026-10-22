@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import { create } from 'zustand';
 import { z } from 'zod';
+import { env } from '@/shared/env';
 import { storage } from '@/shared/storage';
 
 export const PRO_KEY = 'pro.active';
@@ -28,7 +29,7 @@ export const setPro = (isPro: boolean): void => useProStore.setState({ isPro });
  * without a RevenueCat key, such as a fresh clone or a TestFlight build made before the store is set up.
  * lazy: iOS only. Add EXPO_PUBLIC_REVENUECAT_ANDROID_KEY here and in purchases.ts to sell on Android.
  */
-export const paywallEnabled = (): boolean => Platform.OS === 'ios' && !!process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY;
+export const paywallEnabled = (): boolean => Platform.OS === 'ios' && !!env('EXPO_PUBLIC_REVENUECAT_IOS_KEY');
 
 export const getIsPro = (): boolean => useProStore.getState().isPro;
 
