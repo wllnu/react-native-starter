@@ -17,12 +17,11 @@ Expo ships breaking changes every SDK release. Before writing code that touches 
 
 ```bash
 npx expo install <package>  # the only way to add a package, it picks SDK-compatible versions
-pnpm lint                   # ESLint
-pnpm typecheck              # tsc --noEmit
-pnpm test                   # Jest
-npx expo-doctor             # dependency and config problems
-node design/check.mjs       # design system check on your diff
+pnpm verify                 # the gate: picks lint, types, tests, design, deps and config checks from your diff
+pnpm verify --full          # every check on every file, as CI runs it
 ```
+
+Each `pnpm verify` failure prints as `rule-id: file:line message`. Search `.rules/`, `eslint.config.js` or `src/config.test.ts` for the rule ID to find out why it exists.
 
 EAS CLI runs as `npx eas-cli@latest <command>`.
 
@@ -42,13 +41,13 @@ Read the files that match your change before you edit. paseo-rules judges every 
 
 Routes live in `src/app/`. Every file there is a screen. Everything else goes in `src/features/<name>/` (imported only through its `index.ts`) or `src/shared/`. `src/features/notes` is the reference feature. Copy its layout.
 
-UI work: verify with `node design/check.mjs` and nothing else. Don't write your own design checks or render screens. After editing `DESIGN.md`, run `node design/check.mjs build`.
+UI work: verify with `pnpm verify` (it runs `node design/check.mjs`) and nothing else. Don't write your own design checks or render screens. After editing `DESIGN.md`, run `node design/check.mjs build`.
 
 When a check fails, fix the cause. Never disable, skip or delete the check or its test. An `eslint-disable` comment needs a reason after `--`.
 
 ## Definition of done
 
-`pnpm lint`, `pnpm typecheck` and `pnpm test` pass. End every task with:
+`pnpm verify` passes. End every task with:
 
 ```
 Verified: <commands run>

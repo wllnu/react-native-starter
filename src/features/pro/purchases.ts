@@ -4,7 +4,6 @@ import { Platform } from 'react-native';
 import Purchases from 'react-native-purchases';
 import type { CustomerInfo, PurchasesPackage } from 'react-native-purchases';
 import { setPro } from './store';
-import { env } from '@/shared/env';
 
 // Re-exported for index.ts, which is the only surface other files may import.
 export type { PurchasesPackage };
@@ -23,7 +22,7 @@ const isCancelled = (error: unknown): boolean => (error as { userCancelled?: boo
 // lazy: iOS only. Add an Android key and configure with it on Android to sell there (see paywallEnabled in store.ts).
 /** Configures RevenueCat once, from the root layout. A no-op off iOS, without a key, or when already configured. */
 export function configurePurchases(): void {
-  const apiKey = env('EXPO_PUBLIC_REVENUECAT_IOS_KEY');
+  const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY;
   if (Platform.OS !== 'ios' || configuredFlag || !apiKey) return;
   Purchases.configure({ apiKey });
   configuredFlag = true;

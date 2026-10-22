@@ -2,7 +2,6 @@ import * as Sentry from '@sentry/react-native';
 import Constants from 'expo-constants';
 import { z } from 'zod';
 import { create } from 'zustand';
-import { env } from '../env';
 import { storage } from '../storage';
 
 const REPORTS_KEY = 'monitoring.reports';
@@ -53,7 +52,7 @@ function variant(): string {
 
 /** Starts Sentry. Does nothing useful without a DSN or when the user turned reports off. Safe to call again. */
 export function startMonitoring(): void {
-  const dsn = env('EXPO_PUBLIC_SENTRY_DSN');
+  const dsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
   if (started || closing || !dsn || !reportsEnabled()) return;
   Sentry.init({
     dsn,

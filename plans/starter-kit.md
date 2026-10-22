@@ -1,6 +1,6 @@
 # Turn Overload into an agentic React Native starter kit
 
-Status: step 1 done (2026-10-21). Step 2 done (2026-10-22). Steps 3 to 8 not started.
+Status: step 1 done (2026-10-21). Steps 2 and 3 done (2026-10-22). Steps 4 to 8 not started.
 Written 2026-10-21 against `overload/` (Expo SDK 57, React Native 0.86, Expo Router, pnpm) and `Agentic Coding Guardrails for React Native.md`.
 
 ## Goal
@@ -142,6 +142,15 @@ Output: every failure on one line as `rule-id: file:line message`, then a summar
 ### CI
 
 `.github/workflows/verify.yml`: frozen-lockfile install, `pnpm verify --full`, gitleaks, actions pinned to commit hashes (from `RULES.md`). Add pnpm's `minimumReleaseAge` to `pnpm-workspace.yaml` while I'm there, which `RULES.md` asks for and which isn't set yet.
+
+### What step 3 shipped (2026-10-22)
+
+- `eslint.config.js` has every lint rule from the step 2 table, plus the step 2 additions: `rn-platform/platform-select`, `rn-monetization/purchases-in-pro`, `rn-ui/no-scrollview-map` and `react/no-array-index-key`. Typed linting is on. eslint-config-expo 57 only ships the node resolver, so the config adds `import/resolver: typescript` to make `@/` paths resolve for `import/no-restricted-paths`.
+- Rules whose ESLint message can't be changed (`no-floating-promises`, `no-array-index-key`, `no-console`) get their rule ID from a map in `scripts/verify.mjs`.
+- `src/config.test.ts` asserts the step 2 config rules plus `rn-app-config/promotion-frame-rate`, `typed-routes` and `react-compiler`, for the production and development variants. `app.config.ts` now sets `runtimeVersion: { policy: "fingerprint" }`.
+- `pnpm verify` takes about 26 s with `--full`. It also checks the `rn-native-deps/expo-module-first` deny-list, so that prose rule is gone from `.rules/`.
+- `.github/workflows/verify.yml` runs on Node 24, which is the current LTS. `minimumReleaseAge: 1440` is set.
+- Found while merging: the ESLint minion added an `env(name)` helper that read `(process.env as Record<string, unknown>)[name]`. Expo only inlines `EXPO_PUBLIC_` values written as `process.env.EXPO_PUBLIC_X`, so every key would have been `undefined` in a release build. eslint-config-expo's `expo/no-dynamic-env-var` misses the cast. I reverted the helper. Step 7a should plant this case and step 5's reviewer should look for it.
 
 ## Step 4. Hooks
 

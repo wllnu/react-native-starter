@@ -74,21 +74,6 @@ function PlanRow({ plan, selected, onSelect }: { plan: Plan; selected: boolean; 
   );
 }
 
-/**
- * The plan rows with their radio-group wrapper. It is a separate component because the group must wrap
- * its radio rows (a FlatList inside the sheet's ScrollView would nest a virtualized list), and the
- * offering always holds exactly two plans, so eager rendering is the point.
- */
-function PlanGroup({ plans, selected, onSelect }: { plans: Plan[]; selected: PlanId | null; onSelect: (id: PlanId) => void }) {
-  return (
-    <View accessibilityRole="radiogroup" style={styles.plans}>
-      {plans.map((plan) => (
-        <PlanRow key={plan.id} plan={plan} selected={selected === plan.id} onSelect={onSelect} />
-      ))}
-    </View>
-  );
-}
-
 export function PaywallSheet() {
   const { colors } = useTheme();
   const { status, plans, selected, select, reload, purchase, restorePurchases } = usePaywall();
@@ -123,7 +108,12 @@ export function PaywallSheet() {
             <QuietButton label={t("paywall.retry")} onPress={reload} />
           </View>
         ) : (
-          <PlanGroup plans={plans} selected={selected} onSelect={select} />
+          <View accessibilityRole="radiogroup" style={styles.plans}>
+            {/* eslint-disable-next-line no-restricted-syntax -- always two plans inside a radiogroup; a FlatList here would nest in the sheet's ScrollView */}
+            {plans.map((plan) => (
+              <PlanRow key={plan.id} plan={plan} selected={selected === plan.id} onSelect={select} />
+            ))}
+          </View>
         )}
       </ScrollView>
       <SheetFoot>

@@ -127,9 +127,11 @@ const ESLINT_MAP = {
   'react/no-array-index-key': 'rn-ui/stable-list-keys',
   'no-console': 'rn-security/no-sensitive-logs',
 };
+// no-restricted-imports and import/no-restricted-paths put their own text before our message, so the ID can sit mid-message.
+const RN_ID_ANYWHERE = /(?:^|\s)(rn-[\w-]+\/[\w-]+):\s*/;
 function mapEslint(m) {
-  const hit = RN_ID.exec(m.message);
-  if (hit) return [hit[1].replace(/:$/, ''), m.message.slice(hit[0].length)];
+  const hit = RN_ID_ANYWHERE.exec(m.message);
+  if (hit) return [hit[1], m.message.slice(hit.index + hit[0].length)];
   return [ESLINT_MAP[m.ruleId] || (m.ruleId ? `eslint/${m.ruleId}` : 'eslint/parse'), m.message];
 }
 
@@ -219,11 +221,9 @@ async function runDesign() {
 }
 
 // Dependencies a third-party React Native package replaces with a first-party Expo module.
-// The 'linear-gra' + 'dient' spellings are split because the design check bans that word in
-// changed lines; the concatenated values equal the real package names at runtime.
 const EXPO_MODULE_FIRST = [
   ['react-native-fast-image', 'expo-image', 'expo-image'],
-  ['react-native-linear-gra' + 'dient', 'expo-linear-gra' + 'dient', 'expo-linear-gra' + 'dient'],
+  ['react-native-linear-gradient', 'expo-linear-gradient', 'expo-linear-gradient'], // design-ignore: package names, not a style
   ['react-native-haptic-feedback', 'expo-haptics', 'expo-haptics'],
   ['react-native-device-info', 'expo-device or expo-application', 'expo-device'],
   ['react-native-splash-screen', 'expo-splash-screen', 'expo-splash-screen'],

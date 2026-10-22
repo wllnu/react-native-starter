@@ -51,23 +51,3 @@ Bad:
   "postinstall": "sed -i '' 's/minSdkVersion 24/minSdkVersion 26/' android/build.gradle"
 }
 ```
-
-## rn-native-deps/expo-module-first
-Severity: warning
-Rule: Add the Expo module instead of a third-party React Native package the Expo module replaces.
-Violated when: `package.json` adds one of these dependencies: `react-native-fast-image` (use expo-image), `react-native-linear-gradient` (expo-linear-gradient), `react-native-haptic-feedback` (expo-haptics), `react-native-device-info` (expo-device, expo-application), `react-native-splash-screen` (expo-splash-screen), `react-native-fs` (expo-file-system), `react-native-video` (expo-video), `react-native-camera` (expo-camera).
-Followed when: dependencies added in the changed lines are `expo-*` modules or other packages not on that list.
-
-Good:
-```json
-"dependencies": {
-  "expo-image": "~57.0.5"
-}
-```
-
-Bad:
-```json
-"dependencies": {
-  "react-native-fast-image": "^8.6.3"
-}
-```

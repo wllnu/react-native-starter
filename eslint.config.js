@@ -86,7 +86,7 @@ const featureZones = features.map(featureZone);
 module.exports = defineConfig([
   expoConfig,
   {
-    ignores: ["dist/*"],
+    ignores: ["dist/*", ".expo/*"],
   },
   {
     // Jest runs this file before every test file, with its globals in scope.

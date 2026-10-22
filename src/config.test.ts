@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { isDeepStrictEqual } from "node:util";
 import type { ExpoConfig } from "expo/config";
 
 import productionConfig from "../app.config.ts";
@@ -8,15 +9,6 @@ import productionConfig from "../app.config.ts";
 // message starts with the rule ID it enforces. One `it` per rule ID.
 function check(ok: boolean, message: string): void {
   if (!ok) throw new Error(message);
-}
-
-function deepEquals(actual: unknown, expected: unknown): boolean {
-  try {
-    expect(actual).toEqual(expected);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 // Re-imports app.config.ts with APP_VARIANT set, then restores the env var. The static import above
@@ -89,7 +81,7 @@ describe("config", () => {
   it("rn-app-config/fingerprint-runtime-version", () => {
     for (const config of configs) {
       check(
-        deepEquals(config.runtimeVersion, { policy: "fingerprint" }),
+        isDeepStrictEqual(config.runtimeVersion, { policy: "fingerprint" }),
         "rn-app-config/fingerprint-runtime-version: set runtimeVersion to { policy: 'fingerprint' } so an OTA update never reaches a binary with different native code.",
       );
     }

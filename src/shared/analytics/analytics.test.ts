@@ -1,14 +1,13 @@
 // The SDK also exports init/trackEvent/dispose as named exports; the mock replaces the documented default export.
 /* eslint-disable import/no-named-as-default-member -- the mock replaces the documented default export, so calls must go through it */
 import Aptabase from '@aptabase/react-native';
-import { env } from '../env';
 import { setReportsEnabled } from '../monitoring';
 import { setAnalyticsEnabled, startAnalytics, track } from './index';
 
 jest.mock('react-native-mmkv', () => jest.requireActual<typeof import('@/shared/storage/test-support')>('@/shared/storage/test-support').mmkvMock);
 
 describe('analytics', () => {
-  const originalKey = env('EXPO_PUBLIC_APTABASE_KEY');
+  const originalKey = process.env.EXPO_PUBLIC_APTABASE_KEY;
 
   beforeEach(async () => {
     process.env.EXPO_PUBLIC_APTABASE_KEY = 'A-GB-0000000000';
