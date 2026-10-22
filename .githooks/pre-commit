@@ -1,0 +1,3 @@
+#!/bin/sh
+# Runs the verify gate on every commit; core.hooksPath points here via the pnpm prepare script.
+exec pnpm verify

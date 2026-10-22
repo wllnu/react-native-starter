@@ -64,6 +64,7 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "verify": "node scripts/verify.mjs",
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
     "db:generate": "drizzle-kit generate",
     "test": "jest --passWithNoTests"
   },

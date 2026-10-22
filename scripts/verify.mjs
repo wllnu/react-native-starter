@@ -12,6 +12,8 @@ import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { mapEslint } from './lib/eslint-ids.mjs';
+import { TS_LINE } from './lib/ts-errors.mjs';
 
 const FULL = process.argv.includes('--full') || Boolean(process.env.CI);
 
@@ -121,20 +123,6 @@ async function guard(tier, fn) {
 // ───────────────────────── shared result parsers ─────────────────────────
 const RN_ID = /^(rn-[\w-]+\/[\w-]+):\s*/;
 
-// ESLint: keep rule IDs the lint rules put in their messages, map well-known rules to rule IDs, otherwise namespace as eslint/*.
-const ESLINT_MAP = {
-  '@typescript-eslint/no-floating-promises': 'rn-testing/await-rntl',
-  'react/no-array-index-key': 'rn-ui/stable-list-keys',
-  'no-console': 'rn-security/no-sensitive-logs',
-};
-// no-restricted-imports and import/no-restricted-paths put their own text before our message, so the ID can sit mid-message.
-const RN_ID_ANYWHERE = /(?:^|\s)(rn-[\w-]+\/[\w-]+):\s*/;
-function mapEslint(m) {
-  const hit = RN_ID_ANYWHERE.exec(m.message);
-  if (hit) return [hit[1], m.message.slice(hit.index + hit[0].length)];
-  return [ESLINT_MAP[m.ruleId] || (m.ruleId ? `eslint/${m.ruleId}` : 'eslint/parse'), m.message];
-}
-
 // Jest: failures become `jest/test-failed` unless the assertion message carries a rule ID.
 function collectJestFailures(parsed, tier) {
   for (const suite of parsed.testResults || []) {
@@ -186,7 +174,6 @@ async function runLint() {
   }
 }
 
-const TS_LINE = /^(?<rel>.+?)\((?<line>\d+),(?<col>\d+)\):\s*error\s+TS(?<code>\d+):\s*(?<message>.+)$/;
 async function runTypes() {
   ran.push('types');
   const r = await runCapture('npx', ['tsc', '--noEmit', '--pretty', 'false']);
