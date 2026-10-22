@@ -3,6 +3,8 @@ allowBuilds:
   better-sqlite3: true
   esbuild: true
   unrs-resolver: true
+# New package versions must be a day old before install (RULES.md, supply-chain protection).
+minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - '@expo/cli@57.0.32'
   - '@expo/config-plugins@57.0.11'
