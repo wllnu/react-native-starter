@@ -36,7 +36,7 @@ describe("ActionSheet", () => {
       />,
     );
     // The mocked Modal is the first host element; it unmounts once hidden, so keep its handler.
-    const { onDismiss } = screen.root!.props;
+    const onDismiss = (screen.root!.props as { onDismiss: () => void }).onDismiss;
     await fireEvent.press(screen.getByRole("button", { name: "Discard" }));
     expect(screen.queryByText("Discard")).not.toBeOnTheScreen();
     expect(calls).toEqual([]);
@@ -47,7 +47,8 @@ describe("ActionSheet", () => {
   it("ignores a dismiss it did not start", async () => {
     const onClose = jest.fn();
     await render(<ActionSheet visible onClose={onClose} />);
-    await act(async () => screen.root!.props.onDismiss());
+    const onDismiss = (screen.root!.props as { onDismiss: () => void }).onDismiss;
+    await act(async () => onDismiss());
     expect(onClose).not.toHaveBeenCalled();
   });
 

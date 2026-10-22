@@ -1,6 +1,7 @@
 import type { ExpoConfig } from "expo/config";
 
 import { darkColors } from "./design/tokens.ts";
+import { env } from "./src/shared/env.ts";
 
 // Everything that names this app or an account. Change these after cloning, then run `eas init` for a projectId.
 const app = {
@@ -19,7 +20,7 @@ const suffixes = {
   preview: ".preview",
   production: "",
 } as const;
-const variant = process.env.APP_VARIANT ?? "production";
+const variant = env("APP_VARIANT") ?? "production";
 if (!(variant in suffixes)) {
   throw new Error(
     `APP_VARIANT must be development, preview or production, got "${variant}"`,
@@ -106,11 +107,11 @@ const config: ExpoConfig = {
     "expo-sqlite",
     // Uploads source maps at build time. SENTRY_ORG, SENTRY_PROJECT and SENTRY_AUTH_TOKEN come from the EAS environment,
     // never from the repo. Without SENTRY_ORG the upload step is left out, so a build without a Sentry account still passes.
-    ...(process.env.SENTRY_ORG
+    ...(env("SENTRY_ORG")
       ? [
           [
             "@sentry/react-native/expo",
-            { url: "https://sentry.io/", organization: process.env.SENTRY_ORG, project: process.env.SENTRY_PROJECT },
+            { url: "https://sentry.io/", organization: env("SENTRY_ORG"), project: env("SENTRY_PROJECT") },
           ] as [string, object],
         ]
       : []),

@@ -27,6 +27,7 @@ describe("Text", () => {
     );
     const node = screen.getByText("3");
     expect(node.props.maxFontSizeMultiplier).toBeLessThan(2);
-    expect(StyleSheet.flatten(node.props.style).color).toBe(colors.muted);
+    const style = StyleSheet.flatten(node.props.style) as { color?: string };
+    expect(style.color).toBe(colors.muted);
   });
 });

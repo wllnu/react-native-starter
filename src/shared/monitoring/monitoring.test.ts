@@ -9,10 +9,12 @@ import {
   startMonitoring,
 } from './index';
 
+import { env } from '../env';
+
 jest.mock('react-native-mmkv', () => jest.requireActual<typeof import('@/shared/storage/test-support')>('@/shared/storage/test-support').mmkvMock);
 
 describe('monitoring', () => {
-  const originalDsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
+  const originalDsn = env('EXPO_PUBLIC_SENTRY_DSN');
 
   beforeEach(async () => {
     await setReportsEnabled(false);

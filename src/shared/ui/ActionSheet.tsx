@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from "react";
-import { Modal, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { FlatList, Modal, Platform, Pressable, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, SlideInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -89,25 +89,32 @@ export function ActionSheet({
         >
           {message || hasRows ? (
             <View style={[styles.group, styles.contentGroup, { backgroundColor: colors.surface }]}>
-              <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
-                {message ? (
-                  <View
-                    style={[
-                      styles.message,
-                      message.long ? styles.long : styles.centred,
-                      { borderBottomColor: colors.line, borderBottomWidth: hasRows ? 1 : 0 },
-                    ]}
-                  >
-                    {message.title ? <Text type="body-strong">{message.title}</Text> : null}
-                    <Text type="secondary" color="secondary" style={message.long ? undefined : styles.text}>
-                      {message.body}
-                    </Text>
-                  </View>
-                ) : null}
-                {children}
-                {actions.map((action, index) => (
+              <FlatList
+                style={styles.scroll}
+                keyboardShouldPersistTaps="handled"
+                data={actions}
+                keyExtractor={(action) => action.label}
+                ListHeaderComponent={
+                  <>
+                    {message ? (
+                      <View
+                        style={[
+                          styles.message,
+                          message.long ? styles.long : styles.centred,
+                          { borderBottomColor: colors.line, borderBottomWidth: hasRows ? 1 : 0 },
+                        ]}
+                      >
+                        {message.title ? <Text type="body-strong">{message.title}</Text> : null}
+                        <Text type="secondary" color="secondary" style={message.long ? undefined : styles.text}>
+                          {message.body}
+                        </Text>
+                      </View>
+                    ) : null}
+                    {children}
+                  </>
+                }
+                renderItem={({ item: action, index }) => (
                   <Pressable
-                    key={action.label}
                     accessibilityRole="button"
                     accessibilityState={{ disabled: action.disabled === true, selected: action.selected === true }}
                     disabled={action.disabled === true}
@@ -135,8 +142,8 @@ export function ActionSheet({
                       </View>
                     ) : null}
                   </Pressable>
-                ))}
-              </ScrollView>
+                )}
+              />
             </View>
           ) : null}
           <View style={[styles.group, message || hasRows ? styles.cancelGroup : null]}>
