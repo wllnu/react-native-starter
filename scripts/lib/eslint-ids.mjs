@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // Shared ESLint message → rule-ID mapping so every check (verify, on-edit guard) prints failures
 // the same way: `rule-id: file:line message`, with IDs from .rules/.
 //

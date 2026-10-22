@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // Shared tsc error-line parser so verify and the on-edit guard report type failures the same way:
 // `ts/TS<code>: file:line message` from `tsc --noEmit --pretty false`.
 

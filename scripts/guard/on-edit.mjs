@@ -4,7 +4,7 @@
 //
 //   {"hook_event_name": "PostToolUse", "cwd": "...", "tool_name": "Edit", "tool_input": {"file_path": "/abs/path"}}
 //
-// Runs ESLint on that one file and, measured warm tsc under the ~3s bar (1.0s, cold 2.2s), tsc too.
+// Runs ESLint on that one file, then an incremental project tsc (warm 1.0s, cold 2.2s on the starter).
 // Errors go back into the turn as `rule-id: file:line message`. Exit 2 = errors (stderr is fed back
 // to the agent), exit 0 = clean, including bad input or files outside the gate, which must never
 // wedge a write.
@@ -30,7 +30,7 @@ function repoRoot(cwd) {
   return r.status === 0 ? r.stdout.trim() : '';
 }
 
-function crashed(kind, bin, r) {
+function crashed(kind, r) {
   process.stderr.write(`verify/${kind}-crashed: ${firstLine(r.stderr) || (r.error && r.error.message) || `exited with code ${r.status}`}\n`);
 }
 
@@ -57,7 +57,7 @@ function main() {
   const lint = spawnSync(path.join(root, 'node_modules/.bin/eslint'), ['--format', 'json', '--no-warn-ignored', file], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, shell: false });
   let report;
   try { report = JSON.parse(lint.stdout); }
-  catch { crashed('lint', 'eslint', lint); return 2; }
+  catch { crashed('lint', lint); return 2; }
   for (const res of report) {
     for (const m of res.messages || []) {
       if (m.severity < 2) continue; // warnings stay outside this fast gate
@@ -72,11 +72,10 @@ function main() {
   const typeErrors = [];
   for (const line of String(tsc.stdout || '').split('\n')) {
     const m = TS_LINE.exec(line.trim());
-    // Scope to the edited file: verify runs project-wide tsc at the stop hook, so here only the
-    // file this tool call touched is allowed to block the turn.
-    if (m && m.groups.rel === file) typeErrors.push(`ts/TS${m.groups.code}: ${m.groups.rel}:${m.groups.line} ${m.groups.message}`);
+    // Report every file, not just this one: an edited signature breaks its callers elsewhere.
+    if (m) typeErrors.push(`ts/TS${m.groups.code}: ${m.groups.rel}:${m.groups.line} ${m.groups.message}`);
   }
-  if (!typeErrors.length && tsc.status !== 0) { crashed('types', 'tsc', tsc); return 2; }
+  if (!typeErrors.length && tsc.status !== 0) { crashed('types', tsc); return 2; }
   problems.push(...typeErrors);
 
   if (problems.length) {
