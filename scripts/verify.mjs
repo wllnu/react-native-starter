@@ -76,10 +76,11 @@ const codeFiles = existing.filter((f) => /\.(ts|tsx|js|mjs|cjs)$/.test(f));
 const srcCode = existing.filter((f) => /^src\/.+\.(ts|tsx)$/.test(f));
 const designChanged = existing.some((f) => f === 'DESIGN.md' || /\.tsx$/.test(f));
 const depsChanged = ['package.json', 'pnpm-lock.yaml'].some((f) => changed.includes(f));
+const scriptsChanged = existing.some((f) => f.startsWith('scripts/'));
 const configChanged = ['app.config.ts', 'eas.json'].some((f) => changed.includes(f)) || changed.some((f) => f.startsWith('plugins/'));
 
 // ───────────────────────── findings ─────────────────────────
-const TIER_ORDER = { lint: 0, types: 1, tests: 2, design: 3, deps: 4, config: 5, native: 6, secrets: 7 };
+const TIER_ORDER = { lint: 0, types: 1, tests: 2, guards: 2.5, design: 3, deps: 4, config: 5, native: 6, secrets: 7 };
 const failures = [];
 const warnings = [];
 const ran = [];
@@ -190,6 +191,17 @@ async function runTests() {
   ran.push('tests');
   if (FULL) { await runJest('tests', ['--passWithNoTests']); return; }
   await runJest('tests', ['--findRelatedTests', ...srcCode, '--passWithNoTests']);
+}
+
+// The guard scripts' own node:test suites (Jest's jest-expo preset doesn't load plain .mjs).
+async function runGuards() {
+  ran.push('guards');
+  const files = gitOut(['ls-files', '--cached', '--others', '--exclude-standard', 'scripts/']).split('\n').filter((f) => f.endsWith('.test.mjs'));
+  if (!files.length) return;
+  const r = await runCapture('node', ['--test', '--test-reporter=tap', ...files]);
+  const failed = r.stdout.split('\n').map((l) => l.trim()).filter((l) => /^not ok \d+ - /.test(l));
+  for (const l of failed) failures.push(fail('guards', 'guard/test-failed', undefined, undefined, l.replace(/^not ok \d+ - /, '')));
+  if (r.code !== 0 && !failed.length) crash('guards', r);
 }
 
 async function runDesign() {
@@ -340,6 +352,8 @@ async function main() {
   concurrent.push(guard('types', runTypes));
   if (srcCode.length || FULL) concurrent.push(guard('tests', runTests));
   else skip('tests', 'no src .ts/.tsx changed');
+  if (scriptsChanged || FULL) concurrent.push(guard('guards', runGuards));
+  else skip('guards', 'no scripts/ change');
   await Promise.all(concurrent);
 
   if (designChanged || FULL) await guard('design', runDesign);

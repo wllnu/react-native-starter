@@ -1,6 +1,6 @@
 # Turn Overload into an agentic React Native starter kit
 
-Status: step 1 done (2026-10-21). Steps 2 and 3 done (2026-10-22). Steps 4 to 8 not started.
+Status: step 1 done (2026-10-21). Steps 2 to 4 done (2026-10-22). Steps 5 to 8 not started.
 Written 2026-10-21 against `overload/` (Expo SDK 57, React Native 0.86, Expo Router, pnpm) and `Agentic Coding Guardrails for React Native.md`.
 
 ## Goal
@@ -164,6 +164,17 @@ The logic lives in `scripts/guard/*.mjs`. `.claude/settings.json` only wires the
 - A git pre-commit hook through `core.hooksPath` pointing at `.githooks/pre-commit`, which runs `pnpm verify`. No husky or lefthook. `pnpm prepare` sets the path.
 
 `overload/.claude/settings.json` enables the `expo@claude-plugins-official` plugin. That moves to the root settings.
+
+### What step 4 shipped (2026-10-22)
+
+- `scripts/guard/` has `on-edit.mjs`, `on-stop.mjs`, `pre-bash.mjs` and `pre-edit.mjs`. `.claude/settings.json` wires all four, sets `permissions.deny` for `ios/**` and `android/**`, and keeps the Expo plugin.
+- A warm incremental `tsc` takes about 1 s on the starter (2.2 s cold), so `on-edit` runs it after ESLint and reports type errors in every file, not just the edited one, because a changed signature breaks its callers. ESLint on one file takes 1.5 to 2.8 s.
+- The Stop hook has a 600 s timeout, since Claude Code's default of 60 s is too short when `verify` runs prebuild.
+- The hook-only blocks use `guard/*` rule IDs (`guard/no-verify`, `guard/no-force-push`, `guard/expo-install`, `guard/keep-tests`). The native-folder block reuses `rn-native-deps/no-native-edits`.
+- `pre-bash` doesn't catch command substitution, `env` or `xargs` wrappers, `git -C dir`, force-push through a `+ref` refspec, or `rm -r` of a directory that holds tests. Step 7a can plant these if they turn out to matter.
+- The ESLint rule-ID map and the `tsc` line regex moved to `scripts/lib/`, so `verify` and `on-edit` print failures the same way.
+- `verify` has a new `guards` tier that runs `node --test` on `scripts/**/*.test.mjs` when anything under `scripts/` changes. The jest-expo preset doesn't load plain `.mjs`, which is why these tests use `node:test`.
+- `.githooks/pre-commit` runs `pnpm verify`. `pnpm prepare` points `core.hooksPath` at it and does nothing outside a git repo.
 
 ## Step 5. Runtime checks and review
 
