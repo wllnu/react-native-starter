@@ -8,10 +8,6 @@
 ![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-18181b)
 [![MIT license](https://img.shields.io/badge/license-MIT-18181b)](LICENSE)
 
-I build most of my app code with coding agents now. They write React Native fast, and they also reach for `AsyncStorage`, put `.map` inside a `ScrollView`, hardcode hex colours and declare the task done with a failing test. This repo is my answer: an Expo starter where those mistakes get caught by a check while the agent is still working, and every failure says which rule it broke and where the reasoning lives.
-
-It started as the shell of Overload, a workout app I was building. I stripped out the workout code, kept what every app needs, and turned the guardrail idea in [`docs/guardrails.md`](docs/guardrails.md) into working config. [`plans/starter-kit.md`](plans/starter-kit.md) is the step-by-step plan I worked from, decisions included.
-
 ## What to look at
 
 **The guardrail loop.** [`AGENTS.md`](AGENTS.md) is short on purpose. It routes the agent to the rule files in [`.rules/`](.rules) that match its change. Anything a tool can check lives in [`eslint.config.js`](eslint.config.js) or [`src/config.test.ts`](src/config.test.ts) instead, with a rule ID at the start of every message. The rule files keep only what needs judgment, with good and bad examples for each rule.
