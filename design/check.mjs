@@ -320,7 +320,7 @@ function runBuild() {
   const motion = Object.fromEntries(Object.entries(data.motion || {}).map(([k, v]) => { const m = String(v).match(/^([\d.]+)(ms|s)$/); return [k, m ? Number(m[1]) * (m[2] === 's' ? 1000 : 1) : v]; }));
   for (const [k, v] of Object.entries(spacing)) if (v > 2 && v % 4) warn(`warn: spacing.${k} = ${v}px is off the 4px grid`);
   if (typo.body && typo.body.size < 16) warn(`warn: body text is ${typo.body.size}px; 16px is the usual minimum`);
-  for (const [c, props] of Object.entries(data.components || {})) for (const v of Object.values(props || {})) resolve(v);
+  for (const props of Object.values(data.components || {})) for (const v of Object.values(props || {})) resolve(v);
   // contrast of role pairs, light and each theme
   const check = (pal, label) => {
     const fg = ['ink', 'text', 'foreground', 'muted'].filter((k) => pal[k]), bg = ['canvas', 'background', 'surface'].filter((k) => pal[k]);

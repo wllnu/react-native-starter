@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
+  <title id="title">React Native starter</title>
+  <desc id="desc">The guardrail loop: rules, checks on every edit, pnpm verify before done, and review on request. Every failure names the rule it broke and goes back to the agent.</desc>
+  <style>
+    .canvas { fill: #f4f4f5; }
+    .card { fill: #ffffff; stroke: #18181b14; stroke-width: 1.5; }
+    .ink { fill: #18181b; }
+    .secondary { fill: #4b4b53; }
+    .muted { fill: #66666f; }
+    .faint { stroke: #c4c4c9; }
+    .accent { stroke: #2563eb; }
+    .accent-fill { fill: #2563eb; }
+    .pill { fill: #18181b; }
+    .on-ink { fill: #ffffff; }
+    .on-ink-muted { fill: #a1a1aa; }
+    text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    @media (prefers-color-scheme: dark) {
+      .canvas { fill: #0f0f11; }
+      .card { fill: #1c1c20; stroke: #ffffff1f; }
+      .ink { fill: #f4f4f5; }
+      .secondary { fill: #b4b4bc; }
+      .muted { fill: #9b9ba4; }
+      .faint { stroke: #4a4a51; }
+      .accent { stroke: #7aa7ff; }
+      .accent-fill { fill: #7aa7ff; }
+      .pill { fill: #f4f4f5; }
+      .on-ink { fill: #18181b; }
+      .on-ink-muted { fill: #5b5b63; }
+    }
+  </style>
+
+  <rect class="canvas" width="1280" height="640" rx="24"/>
+
+  <text class="muted" x="64" y="104" font-size="15" font-weight="700" letter-spacing="1.6">EXPO SDK 57 · REACT NATIVE 0.86 · TYPESCRIPT STRICT</text>
+  <text class="ink" x="64" y="164" font-size="56" font-weight="700">React Native starter</text>
+  <text class="secondary" x="64" y="208" font-size="25">An Expo app with guardrails a coding agent can't talk its way past.</text>
+
+  <!-- Four stages -->
+  <g>
+    <rect class="card" x="64" y="256" width="270" height="196" rx="20"/>
+    <text class="muted" x="92" y="296" font-size="14" font-weight="700" letter-spacing="1.4">01 · GUIDE</text>
+    <text class="ink" x="92" y="332" font-size="24" font-weight="600">Rules</text>
+    <text class="secondary" x="92" y="368" font-size="17">AGENTS.md routes to</text>
+    <text class="secondary" x="92" y="392" font-size="17">scoped .rules/ files,</text>
+    <text class="secondary" x="92" y="416" font-size="17">each rule with an ID</text>
+  </g>
+  <g>
+    <rect class="card" x="358" y="256" width="270" height="196" rx="20"/>
+    <text class="muted" x="386" y="296" font-size="14" font-weight="700" letter-spacing="1.4">02 · EVERY EDIT</text>
+    <text class="ink" x="386" y="332" font-size="24" font-weight="600">Hooks</text>
+    <text class="secondary" x="386" y="368" font-size="17">ESLint and tsc run on</text>
+    <text class="secondary" x="386" y="392" font-size="17">the touched file; risky</text>
+    <text class="secondary" x="386" y="416" font-size="17">commands are blocked</text>
+  </g>
+  <g>
+    <rect class="card" x="652" y="256" width="270" height="196" rx="20"/>
+    <text class="muted" x="680" y="296" font-size="14" font-weight="700" letter-spacing="1.4">03 · BEFORE DONE</text>
+    <text class="ink mono" x="680" y="332" font-size="24" font-weight="600">pnpm verify</text>
+    <text class="secondary" x="680" y="368" font-size="17">Picks lint, types, tests,</text>
+    <text class="secondary" x="680" y="392" font-size="17">design and config</text>
+    <text class="secondary" x="680" y="416" font-size="17">checks from the diff</text>
+  </g>
+  <g>
+    <rect class="card" x="946" y="256" width="270" height="196" rx="20"/>
+    <text class="muted" x="974" y="296" font-size="14" font-weight="700" letter-spacing="1.4">04 · ON REQUEST</text>
+    <text class="ink" x="974" y="332" font-size="24" font-weight="600">Review</text>
+    <text class="secondary" x="974" y="368" font-size="17">Maestro screenshots</text>
+    <text class="secondary" x="974" y="392" font-size="17">and a reviewer agent</text>
+    <text class="secondary" x="974" y="416" font-size="17">with fresh context</text>
+  </g>
+
+  <!-- Chevrons between stages -->
+  <g class="faint" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M341 344 l6 10 l-6 10"/>
+    <path d="M635 344 l6 10 l-6 10"/>
+    <path d="M929 344 l6 10 l-6 10"/>
+  </g>
+
+  <!-- Feedback loop back to the rules -->
+  <path class="accent" d="M1081 452 V530 H199 V466" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path class="accent-fill" d="M199 456 l-8 14 h16 z"/>
+
+  <rect class="pill" x="300" y="506" width="680" height="48" rx="24"/>
+  <text class="on-ink mono" x="640" y="537" font-size="17" text-anchor="middle">rn-ui/expo-image: src/features/notes/NoteScreen.tsx:12</text>
+
+  <text class="muted" x="640" y="596" font-size="17" text-anchor="middle">Every failure names the rule it broke, so the agent fixes the cause instead of the symptom.</text>
+</svg>

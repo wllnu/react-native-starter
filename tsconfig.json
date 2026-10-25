@@ -5,7 +5,7 @@
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
     "allowImportingTsExtensions": true,
-    "types": ["jest"],
+    "types": ["jest", "expo/types"],
     "paths": {
       "@/*": [
         "./src/*"
