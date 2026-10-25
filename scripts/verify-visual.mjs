@@ -6,7 +6,8 @@
 //
 // It boots an iPhone SE (3rd generation) and the largest Pro Max, installs the development build
 // (rebuilding only when @expo/fingerprint says the native project changed), starts Metro, and runs
-// each Maestro flow in .maestro/ in light and dark (`xcrun simctl ui <device> appearance <mode>`).
+// each Maestro flow in .maestro/ in light and dark (`xcrun simctl ui <device> appearance <mode>`),
+// reinstalling the app before every flow so each one starts clean (empty database, cold process).
 // Screenshots land in artifacts/screens/<flow>-<device>-<light|dark>.png and are printed at the end.
 //
 // Because console noise is how React Native surfaces real bugs, Metro and the simulator log stream
@@ -16,13 +17,15 @@
 // process. Other yellow boxes (`WARN` lines) are listed but don't fail.
 //
 // Run as a tier of `pnpm verify --visual`; see scripts/verify.mjs. Everything this script touches is
-// machine-local and gitignored (ios/, .expo/, artifacts/), and a run starts from a fresh install
-// (flows assume an empty database), so repeated runs are stable.
+// machine-local and gitignored (ios/, .expo/, artifacts/), and every flow starts from a fresh install
+// (flows assume an empty database and the home screen), so repeated runs are stable.
 //
 // Node 18+, macOS, Xcode and Maestro (brew install maestro). No dependencies beyond the app's own.
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { createVisualTools, tail } from './lib/visual-build.mjs';
+import { freshInstall, runEveryFlow } from './lib/visual-flows.mjs';
 
 const SETUP_ONLY = process.argv.includes('--setup-only');
 
@@ -49,22 +52,11 @@ function die(message) {
   process.exit(1);
 }
 
-function stripAnsi(s) {
-  return String(s || '').replace(/\x1b\[[\d;]*[A-Za-z]/g, '');
-}
-
-// Trailing chunk of a failed tool's output, where the interesting error lines usually sit.
-function tail(s, lines = 40) {
-  return stripAnsi(s).split('\n').map((l) => l.trimEnd()).filter(Boolean).slice(-lines).join('\n');
-}
-
-function run(cmd, args, { timeoutMs, env, label } = {}) {
-  const r = spawnSync(cmd, args, { cwd: root, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, timeout: timeoutMs || FLOW_TIMEOUT_MS, env: { ...process.env, ...env } });
-  if (r.status !== 0) {
-    die(`${label || cmd} failed (exit ${r.status}${r.error ? `, ${r.error.message}` : ''}).\n${tail(`${r.stderr || ''}\n${r.stdout || ''}`)}`);
-  }
-  return r;
-}
+// The build command runner and the iOS project discovery live in scripts/lib/visual-build.mjs so
+// the guards tier can regression-test them with fixtures instead of pod install and xcodebuild.
+// die() stays here (exit-1 failures) and is injected into the helpers; tail() also formats this
+// script's other failed-tool messages.
+const { run, discoverIOSProject, projectWorkspace } = createVisualTools({ root, die, defaultTimeoutMs: FLOW_TIMEOUT_MS });
 
 function simctl(args) {
   return spawnSync('xcrun', ['simctl', ...args], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
@@ -170,17 +162,6 @@ const cache = (() => { try { return JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8
 const iosDir = path.join(root, 'ios');
 const PRODUCTS_DIR = path.join(DERIVED_DATA, 'Build', 'Products', 'Debug-iphonesimulator');
 
-// Names expo generates depend on the app's `name` value, so discover workspace and scheme from the
-// prebuild output instead of hardcoding: variants rename everything ("Starter (development)" builds as Starterdevelopment).
-function discoverIOSProject() {
-  const workspace = fs.readdirSync(iosDir).find((f) => f.endsWith('.xcworkspace'));
-  if (!workspace) die('expo prebuild did not produce an .xcworkspace in ios/.');
-  const xcodeproj = path.join(iosDir, workspace.replace(/\.xcworkspace$/, ''), '.xcodeproj');
-  const schemes = fs.readdirSync(path.join(xcodeproj, 'xcshareddata', 'xcschemes')).filter((f) => f.endsWith('.xcscheme'));
-  if (schemes.length !== 1) die(`Expected exactly one scheme in ios/, found: ${schemes.join(', ')}`);
-  return { workspace, scheme: schemes[0].replace(/\.xcscheme$/, '') };
-}
-
 // Called before the first install and after xcodebuild: exactly one .app must exist to install it.
 function findBuiltApp() {
   if (!fs.existsSync(PRODUCTS_DIR)) return undefined;
@@ -194,16 +175,17 @@ if (appPath) {
 } else {
   console.log('verify-visual: generating the iOS project (expo prebuild; ios/ is gitignored output)');
   run('npx', ['expo', 'prebuild', '-p', 'ios', '--clean', '--no-install'], { env: { APP_VARIANT: 'development', CI: '1' }, timeoutMs: BUILD_TIMEOUT_MS, label: 'expo prebuild' });
-  const proj = discoverIOSProject();
+  const proj = discoverIOSProject(iosDir); // before pod install: prebuild --no-install leaves no .xcworkspace yet, only the .xcodeproj
   console.log(`verify-visual: installing pods (${proj.scheme})`);
-  run('pod', ['install'], { cwd: iosDir, timeoutMs: BUILD_TIMEOUT_MS, label: 'pod install' }); // pod generates the .xcworkspace the build needs
+  run('pod', ['install'], { cwd: iosDir, timeoutMs: BUILD_TIMEOUT_MS, label: 'pod install' }); // pod generates the wrapper .xcworkspace the build needs
+  const workspace = projectWorkspace(iosDir, proj.project); // resolve and validate the sibling workspace xcodebuild is about to build
   // Drop stale .app bundles (a rename or variant change leaves them behind) so the install step is unambiguous.
   if (fs.existsSync(PRODUCTS_DIR)) {
     fs.readdirSync(PRODUCTS_DIR).filter((f) => f.endsWith('.app') || f.endsWith('.app.dSYM')).forEach((f) => fs.rmSync(path.join(PRODUCTS_DIR, f), { recursive: true, force: true }));
   }
   console.log('verify-visual: building the development app (the first build takes minutes)');
   run('xcodebuild', [
-    '-workspace', path.join(iosDir, proj.workspace),
+    '-workspace', path.join(iosDir, workspace),
     '-scheme', proj.scheme,
     '-configuration', 'Debug',
     '-destination', 'generic/platform=iOS Simulator', // one simulator build installs on both devices
@@ -227,15 +209,16 @@ if (!bundleId) die('Could not read the app bundle id from the built .app (Info.p
 const appExecutable = readPlist('CFBundleExecutable');
 if (!appExecutable) die('Could not read the app executable name from the built .app (Info.plist).');
 
-// A reinstall is the reset switch: every run starts from an empty database, which is what the flows assume.
-console.log(`verify-visual: installing ${bundleId} on both devices`);
-for (const d of devices) {
-  simctl(['uninstall', d.udid, bundleId]); // harmless when the app is not installed
-  const r = simctl(['install', d.udid, appPath]);
-  if (r.status !== 0) die(`installing on ${d.name} failed.\n${tail(`${r.stderr || ''}${r.stdout || ''}`)}`);
-}
-
+// Flows get their installs from runEveryFlow below: one terminate/uninstall/install right before
+// every flow, on the flow's own device, because flows assume an empty database and the home screen
+// (note-detail.yaml leaves a Seed note behind; the flows after it wait for the empty state).
+// --setup-only only has to leave the app installed on both devices and stop.
 if (SETUP_ONLY) {
+  console.log(`verify-visual: installing ${bundleId} on both devices`);
+  for (const d of devices) {
+    const r = freshInstall({ device: d, bundleId, appPath, simctl });
+    if (!r.ok) die(r.message);
+  }
   console.log('verify-visual: setup complete (device up, app installed, fingerprint cached). Run maestro test or the full pnpm verify:visual next.');
   process.exit(0);
 }
@@ -290,58 +273,25 @@ const paywallEnabled = Boolean(process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY);
 const flowQueue = flows.filter((f) => paywallEnabled || f !== 'paywall.yaml');
 const skippedFlows = flows.filter((f) => !flowQueue.includes(f));
 
-function moveScreenshot(fromDir, target) {
-  const found = [];
-  const stack = [fromDir];
-  while (stack.length) {
-    const dir = stack.pop();
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      if (entry.isDirectory()) stack.push(path.join(dir, entry.name));
-      else if (entry.name.endsWith('.png')) found.push(path.join(dir, entry.name));
-    }
-  }
-  if (!found.length) return false;
-  // takeScreenshot output wins over Maestro's own step screenshots, which only exist on failing steps.
-  const shot = found.find((f) => f.includes(`${path.sep}takeScreenshot`)) || found.find((f) => !f.includes(`${path.sep}screenshots${path.sep}`)) || found[0];
-  fs.renameSync(shot, target);
-  return true;
-}
-
-function runFlow(flow, udid, mode) {
-  const outDir = path.join(VISUAL_DIR, 'maestro-run');
-  fs.rmSync(outDir, { recursive: true, force: true });
-  fs.mkdirSync(outDir, { recursive: true });
-  const name = flow.replace(/\.yaml$/, '');
-  const target = path.join(SCREEN_DIR, `${name}-${udid}-${mode}.png`);
-  const r = spawnSync('maestro', ['--device', udid, 'test', '--test-output-dir', outDir, path.join(MAESTRO_DIR, flow)], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, timeout: FLOW_TIMEOUT_MS });
-  if (r.status !== 0 || r.error) {
-    // Keep Maestro's artifact bundle (device log, step screenshots, view hierarchy): it is the fastest way to debug a failed flow.
-    const failedDir = path.join(SCREEN_DIR, `failed-${name}-${udid}-${mode}`);
-    fs.rmSync(failedDir, { recursive: true, force: true });
-    if (fs.existsSync(outDir)) fs.cpSync(outDir, failedDir, { recursive: true });
-    failures.push(`${name}: maestro exited ${r.status || r.error.message}. Maestro's artifacts are in artifacts/screens/${path.basename(failedDir)}.`);
-    return undefined;
-  }
-  if (moveScreenshot(outDir, target)) {
-    fs.rmSync(outDir, { recursive: true, force: true });
-    console.log(`verify-visual: screenshot for ${name} → ${path.relative(root, target)}`);
-    return target;
-  }
-  failures.push(`${name}: flow passed but no takeScreenshot output was found in ${outDir}.`);
-  return undefined;
-}
-
-const keptScreenshots = [];
-for (const d of devices) {
-  for (const mode of ['light', 'dark']) {
-    appearance(d.udid, mode);
-    console.log(`verify-visual: ${d.name} appearance ${mode}`);
-    for (const flow of flowQueue) {
-      const shot = runFlow(flow, d.udid, mode);
-      if (shot) keptScreenshots.push(shot);
-    }
-  }
-}
+// runEveryFlow (scripts/lib/visual-flows.mjs) sets the appearance per pass and reinstalls the app
+// on the flow's device before every flow: each flow starts at the home screen with an empty
+// database instead of inheriting whatever a previous flow left (see .maestro/notes-list.yaml).
+const keptScreenshots = runEveryFlow({
+  devices,
+  flows: flowQueue,
+  modes: ['light', 'dark'],
+  bundleId,
+  appPath,
+  timeoutMs: FLOW_TIMEOUT_MS,
+  root,
+  maestroDir: MAESTRO_DIR,
+  screenDir: SCREEN_DIR,
+  outDir: path.join(VISUAL_DIR, 'maestro-run'),
+  simctl,
+  maestro: (args, { timeoutMs }) => spawnSync('maestro', args, { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, timeout: timeoutMs }),
+  onFailure: (message) => failures.push(message),
+  log: (message) => console.log(message),
+});
 
 // ───────────────────────── log scan ─────────────────────────
 // Fail on real bugs; list everything else. console.error and red boxes surface in the Metro log as

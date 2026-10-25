@@ -1,6 +1,7 @@
 # The notes tab. On a fresh install this is the empty state; once a note exists the row shows here.
-# State note: notes persist until the app is reinstalled, which scripts/verify-visual.mjs does on
-# every run, so flows can assume the list starts empty.
+# State note: notes persist until the app is reinstalled, which scripts/verify-visual.mjs does
+# before every flow (each flow gets a fresh install on its device), so flows can assume the list
+# starts empty.
 appId: com.example.starter.dev
 name: notes-list
 ---
