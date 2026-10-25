@@ -13,7 +13,7 @@ pnpm ios        # or pnpm android
 
 These set `APP_VARIANT=development`, so the build installs as `<bundleId>.dev` next to the preview and production builds.
 
-Check a change with `pnpm lint`, `pnpm typecheck` and `pnpm test`. Add packages with `npx expo install <package>`, which picks versions that match the SDK.
+Check a change with `pnpm verify`. It picks lint, types, tests and the design, dependency and config checks from your diff. `pnpm verify --full` runs everything, as CI does. Add packages with `npx expo install <package>`, which picks versions that match the SDK.
 
 ## After cloning
 
@@ -33,6 +33,12 @@ Each service stays off until its key is set. A fresh clone runs with no accounts
 | RevenueCat subscriptions (iOS) | `EXPO_PUBLIC_REVENUECAT_IOS_KEY`. Without it the paywall and the Pro row in Settings are hidden. |
 
 Users can turn Sentry and Aptabase off together with the switch in Settings.
+
+## Keeping the guardrails
+
+Every correction becomes a check. When you correct the agent, ask whether a linter or test could have caught the mistake. If one could, add a lint rule to `eslint.config.js` whose message starts with a rule ID, or an assertion to `src/config.test.ts`. If not, add a rule with an ID to the matching file in `.rules/`. `AGENTS.md` tells the agent to offer this whenever you correct it.
+
+When you upgrade Expo or `eslint-config-expo`, look for new lint rules that cover a rule in `.rules/`. Move each one you find to `eslint.config.js` and delete the prose, so the same rule isn't judged twice.
 
 ## Database changes
 

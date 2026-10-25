@@ -1,6 +1,6 @@
 # Turn Overload into an agentic React Native starter kit
 
-Status: step 1 done (2026-10-21). Steps 2 to 4 done (2026-10-22). Step 5 done (2026-10-25): `pnpm verify:visual` with the log check and `.maestro/` flows, the `rn-reviewer` agent and the new definition of done. Reworked the same day: one simulator, visual run and reviewer on request only (see "Step 5 rework"). The Maestro flows have not run yet because Maestro was not installed. Steps 6 to 8 not started.
+Status: step 1 done (2026-10-21). Steps 2 to 4 done (2026-10-22). Step 5 done (2026-10-25): `pnpm verify:visual` with the log check and `.maestro/` flows, the `rn-reviewer` agent and the new definition of done. Reworked the same day: one simulator, visual run and reviewer on request only (see "Step 5 rework"). The Maestro flows have not run yet because Maestro was not installed. Step 6 done (2026-10-25). Steps 7 and 8 not started.
 Written 2026-10-21 against `overload/` (Expo SDK 57, React Native 0.86, Expo Router, pnpm) and `Agentic Coding Guardrails for React Native.md`.
 
 ## Goal
@@ -246,6 +246,12 @@ Not verified: <anything skipped and why>
 
 - **Every correction becomes a check.** When I correct the agent, I ask whether a linter or test could have caught it. If yes, add the lint rule. If no, add a prose rule with an ID. `AGENTS.md` says this in one line, and so does the README for people who adopt the kit.
 - Revisit the enforcement table in step 2 when ESLint or Expo ship new rules.
+
+### What step 6 shipped (2026-10-25)
+
+- `AGENTS.md` has one line under Rules: when the user corrects the agent, it asks whether a check could have caught the mistake and offers to add one (lint, config test, or a `.rules/` entry). It offers instead of adding, because a check added without asking changes the gate for every later task.
+- The README has a "Keeping the guardrails" section with the same rule for people who adopt the kit, plus the upgrade check: after an Expo or `eslint-config-expo` upgrade, move any `.rules/` rule a new lint rule covers into `eslint.config.js`.
+- The README's "check a change" line now names `pnpm verify` instead of `lint`, `typecheck` and `test`.
 
 ## Step 7. Test the guardrails
 

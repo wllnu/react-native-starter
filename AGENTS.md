@@ -48,6 +48,8 @@ UI work: verify with `pnpm verify` (it runs `node design/check.mjs`) and nothing
 
 When a check fails, fix the cause. Never disable, skip or delete the check or its test. An `eslint-disable` comment needs a reason after `--`.
 
+When the user corrects you, ask whether a check could have caught the mistake and offer to add it: a lint rule in `eslint.config.js` or an assertion in `src/config.test.ts` if a tool can see it, otherwise a rule with an ID in the matching `.rules/` file.
+
 ## Definition of done
 
 `pnpm verify` passes. End every task with:
