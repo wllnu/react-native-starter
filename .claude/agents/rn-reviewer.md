@@ -30,9 +30,11 @@ Rule IDs here are stable. Use them exactly.
 
 No single file's diff can prove these, which is why nothing else checks them.
 
-- `review/error-boundary` - every screen (`src/app/**/*.tsx`) mounts inside an error boundary. Walk the `_layout.tsx` chain from the root to the screen; a screen that is not under one cites the screen file.
+- `review/error-boundary` - every screen (`src/app/**/*.tsx`) mounts inside an error boundary. This repo's pattern, which the root `_layout.tsx` sets, is each screen file re-exporting `ErrorBoundary` from `@/shared/monitoring/ErrorBoundary` (expo-router's route boundary). A new or changed screen without that re-export, and with no boundary in a parent `_layout.tsx`, cites the screen file.
 - `review/first-frame-no-db` - the first frame never waits for a database open or a migration. Startup renders from cached state, then hydrates; anything that blocks the root render on `openDatabaseSync`, a `drizzle` migration or a store awaited at module level cites the file that blocks.
+- `review/no-flag-wait-at-launch` - launch never waits for a feature-flag fetch; flags evaluate from a cached value at startup and refresh later. A startup path that blocks the root render on a flag fetch cites the file that blocks.
 - `review/strings-externalised` - every user-facing string starts life in `src/shared/i18n`. A new or changed inline literal rendered to the user (in `t()`, a component prop or a `formatMessage` fallback) cites that line.
+- `review/no-network-in-list-rows` - list rows make no network calls of their own; fetching happens above the list, in the screen, store or query layer. A row component that fires a fetch in a mount effect or on render cites the row file.
 - `review/migration-test` - every new or changed Drizzle migration has a Jest test that applies it against a fixture of the previous release's schema, like the existing migration test pattern. A migration with no such test cites the migration file.
 
 ### Whole-change, beyond `pnpm verify`
