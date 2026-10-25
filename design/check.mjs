@@ -15,6 +15,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
 const argv = process.argv.slice(2);
 const opt = (n, d) => { const i = argv.indexOf(n); return i > -1 ? argv[i + 1] : d; };
@@ -179,14 +180,15 @@ const CSS_SPACE = /^(margin|padding)(-(top|right|bottom|left|inline|block)(-(sta
 const RN_SPACE = /^(margin|padding)(Top|Right|Bottom|Left|Horizontal|Vertical|Start|End)?$|^(gap|rowGap|columnGap)$/;
 const INTERACTIVE = /button|btn|press|touch|tap|row|tab|chip|input|field|toggle|switch|link|action/i;
 
-function git(args) { return execSync(`git ${args}`, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 64 * 1024 * 1024 }); }
+// The project folder holding design/, not the git root, so the check also works from apps/<name> in a monorepo.
+const root = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
+function git(args) { return execSync(`git ${args}`, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 64 * 1024 * 1024 }); }
 
 function collectTargets(sys) {
   const inc = sys.include.map(globRe), exc = sys.exclude.map(globRe);
   const keep = (f) => SCANNABLE.test(f) && !exc.some((r) => r.test(f)) && (!inc.length || inc.some((r) => r.test(f)));
   if (positional.length) return positional.filter((f) => fs.existsSync(f)).map((f) => ({ file: f.split(path.sep).join('/'), lines: null }));
-  let root;
-  try { root = git('rev-parse --show-toplevel').trim(); } catch { die('Not a git repository. Pass files to check, e.g. node design/check.mjs src/**/*.tsx'); }
+  try { git('rev-parse --show-toplevel'); } catch { die('Not a git repository. Pass files to check, e.g. node design/check.mjs src/**/*.tsx'); }
   const rel = (f) => path.relative(process.cwd(), path.join(root, f)).split(path.sep).join('/');
   const targets = new Map();
   let from = 'HEAD';
@@ -196,7 +198,7 @@ function collectTargets(sys) {
     else git('rev-parse --verify HEAD');
   } catch { from = null; }
   if (from) {
-    const diff = git(`diff --no-color --no-ext-diff --unified=0 --diff-filter=AMR ${from}`);
+    const diff = git(`diff --relative --no-color --no-ext-diff --unified=0 --diff-filter=AMR ${from}`); // paths relative to root, nothing outside it
     let cur = null;
     for (const l of diff.split('\n')) {
       if (l.startsWith('+++ ')) { const f = l.slice(4).replace(/^b\//, ''); cur = f !== '/dev/null' && keep(f) ? f : null; if (cur && !targets.has(cur)) targets.set(cur, new Set()); }

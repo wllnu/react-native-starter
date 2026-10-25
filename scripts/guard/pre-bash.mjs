@@ -22,7 +22,7 @@ const RUNNER_SUBS = new Set(['exec', 'dlx', 'run']);
 const PM_SUBS = { pnpm: ['add', 'install', 'i', 'in'], npm: ['add', 'install', 'i', 'in'], yarn: ['add'], bun: ['add'] };
 // Flags that swallow the next token as their value (pnpm --filter web keeps a bare install legal).
 const VALUE_FLAGS = new Set(['--filter', '--dir', '-C', '--prefix', '--registry', '--tag']);
-const REDIRECT_OP = /^[0-9]{0,2}[<>]{1,2}(&[0-9]+)?$/; // >, 2>, >&1, 2>&1 — the target follows
+const REDIRECT_OP = /^[0-9]{0,2}[<>]{1,2}(&[0-9]+)?$/; // >, 2>, >&1, 2>&1; the target follows
 const TEST_PATH = /\.test\.tsx?$/;
 
 // One segment per `&&`, `||`, `;`, `|` or newline outside of quotes; quotes are kept for the tokenizer.

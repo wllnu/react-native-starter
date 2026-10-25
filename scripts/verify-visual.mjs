@@ -25,12 +25,13 @@
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createVisualTools, tail } from './lib/visual-build.mjs';
 import { freshInstall, runEveryFlow } from './lib/visual-flows.mjs';
 
 const SETUP_ONLY = process.argv.includes('--setup-only');
 
-const root = spawnSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).stdout.trim() || process.cwd();
+const root = path.resolve(fileURLToPath(new URL('..', import.meta.url))); // the app folder, also inside a monorepo
 const ARTIFACTS = path.join(root, 'artifacts');
 const SCREEN_DIR = path.join(ARTIFACTS, 'screens');
 const LOG_DIR = path.join(ARTIFACTS, 'logs');

@@ -13,6 +13,7 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { mapEslint } from '../lib/eslint-ids.mjs';
 import { TS_LINE } from '../lib/ts-errors.mjs';
 
@@ -24,11 +25,8 @@ function firstLine(s) {
   return hit || '';
 }
 
-// Repo root for the session cwd in the hook JSON; empty when it can't be resolved.
-function repoRoot(cwd) {
-  const r = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, shell: false });
-  return r.status === 0 ? r.stdout.trim() : '';
-}
+// The app folder holding scripts/, not the git root, so the hook also works from apps/<name> in a monorepo.
+const root = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 
 function crashed(kind, r) {
   process.stderr.write(`verify/${kind}-crashed: ${firstLine(r.stderr) || (r.error && r.error.message) || `exited with code ${r.status}`}\n`);
@@ -43,8 +41,6 @@ function main() {
   const filePath = json.tool_input && json.tool_input.file_path;
   if (typeof filePath !== 'string' || !filePath) return 0;
 
-  const root = repoRoot(cwd);
-  if (!root) return 0;
   if (!LINTABLE.test(filePath)) return 0;
   const abs = path.resolve(cwd, filePath);
   if (!fs.existsSync(abs)) return 0;

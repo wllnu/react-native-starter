@@ -14,6 +14,8 @@
 
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 // First non-empty line of some tool output.
 function firstLine(s) {
@@ -21,23 +23,17 @@ function firstLine(s) {
   return hit || '';
 }
 
-// Repo root for the session cwd in the hook JSON; falls back to the cwd itself.
-function repoRoot(cwd) {
-  const r = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, shell: false });
-  return r.status === 0 ? r.stdout.trim() : '';
-}
+// The app folder holding scripts/, not the git root, so the hook also works from apps/<name> in a monorepo.
+const root = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 
 function main() {
   // Bad or empty stdin is a normal, unmarked first stop attempt (so it can still block).
   let active = false;
-  let cwd = process.cwd();
   try {
-    const json = JSON.parse(fs.readFileSync(0, 'utf8'));
-    active = Boolean(json.stop_hook_active);
-    if (typeof json.cwd === 'string' && json.cwd) cwd = json.cwd;
+    active = Boolean(JSON.parse(fs.readFileSync(0, 'utf8')).stop_hook_active);
   } catch { /* treated as stop_hook_active: false */ }
 
-  const r = spawnSync('node', ['scripts/verify.mjs'], { cwd: repoRoot(cwd) || cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, shell: false });
+  const r = spawnSync('node', ['scripts/verify.mjs'], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, shell: false });
   if (r.status === 0) return 0;
 
   const stdout = String(r.stdout || '').trimEnd();

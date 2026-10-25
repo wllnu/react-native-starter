@@ -43,6 +43,7 @@ Check a change with `pnpm verify`. It picks lint, types, tests and the design, d
 2. Run `npx eas-cli@latest init` and put the project id it prints into `easProjectId`.
 3. Change `name` in `package.json` and the copyright line in `LICENSE`.
 4. Replace the placeholder icons in `assets/images` and rewrite `DESIGN.md` for your product, then run `node design/check.mjs build`.
+5. Want the app inside a pnpm monorepo, next to a Cloudflare Worker for example? Clone the starter into the monorepo's `apps/` folder and run `pnpm monorepo` from the clone. It drops the clone's own git history and lockfile, merges its pnpm settings into the root `pnpm-workspace.yaml` (your values win), moves the CI workflow to `.github/workflows/<folder>.yml`, wires the agent hooks and a pre-commit hook at the root, and stages the result for you to review. An empty monorepo (`git init` plus an `apps/` folder) works too.
 
 ## Optional services
 

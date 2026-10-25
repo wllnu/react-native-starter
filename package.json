@@ -66,6 +66,7 @@
     "typecheck": "tsc --noEmit",
     "verify": "node scripts/verify.mjs",
     "verify:visual": "node scripts/verify-visual.mjs",
+    "monorepo": "node scripts/to-monorepo.mjs",
     "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
     "db:generate": "drizzle-kit generate",
     "test": "jest --passWithNoTests"

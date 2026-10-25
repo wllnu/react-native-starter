@@ -13,6 +13,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { mapEslint } from './lib/eslint-ids.mjs';
 import { TS_LINE } from './lib/ts-errors.mjs';
 
@@ -21,7 +22,7 @@ const VISUAL = process.argv.includes('--visual'); // manual only: the user start
 
 // ───────────────────────── small helpers ─────────────────────────
 function gitOut(args) {
-  const r = spawnSync('git', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const r = spawnSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   if (r.error) throw new Error(`git ${args.join(' ')} failed to start: ${r.error.message}`);
   return r.stdout;
 }
@@ -56,10 +57,8 @@ function firstDepLine(r) {
 const rel = (abs) => (abs ? path.relative(root, path.resolve(root, abs)).split(path.sep).join('/') : '');
 
 // ───────────────────────── changed files ─────────────────────────
-const root = (() => {
-  try { return spawnSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).stdout.trim() || process.cwd(); }
-  catch { return process.cwd(); }
-})();
+// The app folder holding scripts/, not the git root, so the gate also works from apps/<name> in a monorepo.
+const root = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 
 let base = 'HEAD'; // fall back here when the merge base can't be determined (no main, detached)
 try { base = gitOut(['merge-base', 'HEAD', 'main']).trim() || 'HEAD'; }
@@ -68,7 +67,8 @@ catch { base = 'HEAD'; }
 const changed = (() => {
   const set = new Set();
   // Diff base against the working tree: committed-since-base, staged and unstaged in one call.
-  for (const line of gitOut(['diff', '--name-only', base]).split('\n')) if (line) set.add(line);
+  // --relative keeps the diff inside the app folder with app-relative paths; ls-files already does.
+  for (const line of gitOut(['diff', '--name-only', '--relative', base]).split('\n')) if (line) set.add(line);
   for (const line of gitOut(['ls-files', '--others', '--exclude-standard']).split('\n')) if (line) set.add(line);
   return [...set];
 })();

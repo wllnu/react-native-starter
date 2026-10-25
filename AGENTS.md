@@ -20,6 +20,7 @@ npx expo install <package>  # the only way to add a package, it picks SDK-compat
 pnpm verify                 # the gate: picks lint, types, tests, design, deps and config checks from your diff
 pnpm verify --visual        # + the simulator tier (manual only): boots the newest Pro Max and runs the .maestro/ flows
 pnpm verify --full          # every check on every file, as CI runs it
+pnpm monorepo               # one-shot, in a clone inside a monorepo's apps/ folder: wire the app into that workspace
 ```
 
 Each `pnpm verify` failure prints as `rule-id: file:line message`. Search `.rules/`, `eslint.config.js`, `src/config.test.ts` or `scripts/guard/` for the rule ID to find out why it exists.

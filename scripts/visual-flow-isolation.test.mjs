@@ -247,7 +247,12 @@ test('verify-visual.mjs --setup-only installs only the newest Pro Max and never 
     fs.writeFileSync(path.join(fakeApp, 'Info.plist'), JSON.stringify({ CFBundleIdentifier: BUNDLE_ID, CFBundleExecutable: 'Starter' }));
     fs.writeFileSync(path.join(visualDir, 'build.json'), JSON.stringify({ fingerprint, app: fakeApp }, null, 2));
 
-    const r = spawnSync(process.execPath, [fileURLToPath(new URL('./verify-visual.mjs', import.meta.url)), '--setup-only'], {
+    // verify-visual.mjs takes the folder above its scripts/ as the project, so run a copy inside tmp.
+    for (const f of ['verify-visual.mjs', 'lib/visual-build.mjs', 'lib/visual-flows.mjs']) {
+      fs.mkdirSync(path.dirname(path.join(tmp, 'scripts', f)), { recursive: true });
+      fs.copyFileSync(fileURLToPath(new URL(f, import.meta.url)), path.join(tmp, 'scripts', f));
+    }
+    const r = spawnSync(process.execPath, [path.join(tmp, 'scripts/verify-visual.mjs'), '--setup-only'], {
       cwd: tmp,
       env: { ...process.env, FAKE_STUB_LOG: callLog, PATH: `${bin}:${process.env.PATH}` },
       encoding: 'utf8',
