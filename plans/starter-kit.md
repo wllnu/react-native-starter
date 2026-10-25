@@ -1,6 +1,6 @@
 # Turn Overload into an agentic React Native starter kit
 
-Status: step 1 done (2026-10-21). Steps 2 to 4 done (2026-10-22). Steps 5 to 8 not started.
+Status: step 1 done (2026-10-21). Steps 2 to 4 done (2026-10-22). Step 5 done (2026-10-25): `pnpm verify:visual` with the log check and `.maestro/` flows, the `rn-reviewer` agent and the new definition of done. The Maestro flows have not run yet because Maestro was not installed. Steps 6 to 8 not started.
 Written 2026-10-21 against `overload/` (Expo SDK 57, React Native 0.86, Expo Router, pnpm) and `Agentic Coding Guardrails for React Native.md`.
 
 ## Goal
@@ -207,6 +207,16 @@ The verify tier table sends UI-only changes here when `--visual` is passed. It s
 ### Log check
 
 The same script tails Metro and `xcrun simctl spawn booted log stream` while the flows run. It fails on red boxes, `console.error`, and the warnings that point at real bugs: "VirtualizedLists should never be nested", "Each child in a list should have a unique key", "Cannot update a component while rendering". Any other yellow box gets listed but doesn't fail.
+
+### Visual and log check shipped (2026-10-25)
+
+- `scripts/verify-visual.mjs` behind `pnpm verify:visual`, and behind `pnpm verify --visual` for UI changes (a `.tsx`, `DESIGN.md` or `.maestro/` diff turns the tier on). Still opt-in; hooks and CI never run it implicitly.
+- Flows in `.maestro/` per example screen (notes list, new note, note detail, settings, paywall — paywall only when `EXPO_PUBLIC_REVENUECAT_IOS_KEY` is set) plus `_template.yaml` for new screens. Each flow opens the dev build through the dev-client URL, waits for content, calls `takeScreenshot`.
+- Two simulators: iPhone SE (3rd generation) and the newest Pro Max device type, created by the script if missing. Dev build built once and cached by `@expo/fingerprint` hash under `.expo/visual/`; a run reinstalls for a fresh database.
+- Screenshots land in `artifacts/screens/<flow>-<device>-<light|dark>.png`; failed flows keep Maestro's artifact bundle there too. `artifacts/` is gitignored.
+- Log check: Metro (`artifacts/logs/metro.log`) and one `simctl spawn log stream` per device. Fails on `ERROR` lines, on NSException/SIGABRT from the app process, and on the three warnings that point at real bugs ("VirtualizedLists should never be nested", "Each child in a list should have a unique key", "Cannot update a component while rendering"). Other `WARN` yellow boxes are listed without failing.
+- Missing on this machine when written: Maestro was not installed, so the script fails fast with install instructions and nothing was end-to-end verified. Only the build/install/Metro plumbing was exercised with `--setup-only`.
+- Not covered: Android (open question below).
 
 ### Reviewer agent
 
