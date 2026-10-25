@@ -35,6 +35,8 @@ Check a change with `pnpm verify`. It picks lint, types, tests and the design, d
 
 ## After cloning
 
+Ask your agent to run the `get-started` skill (`/get-started` in Claude Code). It asks for the app's name and first feature, renames everything, removes the starter's docs and example code, and lists what's left for you. To do it by hand:
+
 1. Fill in the `app` block at the top of `app.config.ts`: name, slug, scheme and bundle id prefix.
 2. Run `npx eas-cli@latest init` and put the project id it prints into `easProjectId`.
 3. Change `name` in `package.json` and the copyright line in `LICENSE`.
