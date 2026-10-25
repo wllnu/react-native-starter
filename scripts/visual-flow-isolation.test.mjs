@@ -199,10 +199,10 @@ test('screenshot output prefers the takeScreenshot directory and a missing png i
   }
 });
 
-// The real script under --setup-only: it must leave the app freshly installed on both devices and
-// stop there. PATH stubs intercept every device side effect, so this exercises the actual wiring
+// The real script under --setup-only: it must leave the app freshly installed on the one device (the
+// newest Pro Max, never the SE that is also listed) and stop there. PATH stubs intercept every device side effect, so this exercises the actual wiring
 // end to end without a simulator, build or Metro.
-test('verify-visual.mjs --setup-only installs both devices and never builds or runs flows', (t) => {
+test('verify-visual.mjs --setup-only installs only the newest Pro Max and never builds or runs flows', (t) => {
   if (process.platform !== 'darwin') return t.skip('verify-visual.mjs exits outside macOS before any device work; the unit tests above cover the scheduling.');
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'vfi-setup-'));
   try {
@@ -255,18 +255,19 @@ test('verify-visual.mjs --setup-only installs both devices and never builds or r
     });
     const report = `${r.stdout || ''}\n${r.stderr || ''}`.slice(-2500);
     assert.equal(r.status, 0, `--setup-only run failed (exit ${r.status})\n${report}`);
-    assert.match(r.stdout, /installing com\.example\.starter\.dev on both devices/);
+    assert.match(r.stdout, /installing com\.example\.starter\.dev on iPhone 17 Pro Max/);
     assert.match(r.stdout, /setup complete \(device up, app installed, fingerprint cached\)/);
 
     const lines = fs.readFileSync(callLog, 'utf8').split('\n').filter(Boolean);
     const simctlCalls = lines.filter((l) => l.startsWith('xcrun simctl '));
-    for (const udid of ['CE1D6E8D-1A2B-3C4D-5E6F-1122334455AA', '0F1E2D3C-4B5A-6978-8796-CCDDAA1122BB']) {
+    for (const udid of ['0F1E2D3C-4B5A-6978-8796-CCDDAA1122BB']) {
       const at = simctlCalls.findIndex((l) => l.startsWith(`xcrun simctl install ${udid} `));
       assert.ok(at >= 0, `no install for ${udid}. Log:\n${lines.join('\n')}`);
       assert.equal(simctlCalls[at - 1], `xcrun simctl uninstall ${udid} ${BUNDLE_ID}`, `no uninstall before the install for ${udid}`);
       assert.equal(simctlCalls[at - 2], `xcrun simctl terminate ${udid} ${BUNDLE_ID}`, `no terminate before the install for ${udid}`);
     }
-    assert.equal(lines.filter((l) => l.startsWith('xcrun simctl install ')).length, 2, 'more than the two device installs ran');
+    assert.equal(lines.filter((l) => l.startsWith('xcrun simctl install ')).length, 1, 'more than the one device install ran');
+    assert.ok(lines.every((l) => !l.includes('CE1D6E8D-1A2B-3C4D-5E6F-1122334455AA')), 'the iPhone SE was booted or installed');
     assert.ok(lines.every((l) => !l.startsWith('maestro ')), 'a flow ran under --setup-only');
     assert.ok(lines.every((l) => !l.startsWith('xcodebuild ')), 'a native build ran under --setup-only');
     assert.ok(lines.every((l) => !l.includes(' simctl ui ')), 'an appearance change ran under --setup-only');

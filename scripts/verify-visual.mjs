@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // Visual verification: the only sanctioned way to look at app screens.
 //
-//   node scripts/verify-visual.mjs          build (if needed), boot two simulators, run each flow in light and dark
+//   node scripts/verify-visual.mjs          build (if needed), boot the simulator, run each flow in light and dark
 //   node scripts/verify-visual.mjs --setup-only    stop after build, install and Metro are ready (no flows)
 //
-// It boots an iPhone SE (3rd generation) and the largest Pro Max, installs the development build
+// It boots one simulator, the newest Pro Max, installs the development build
 // (rebuilding only when @expo/fingerprint says the native project changed), starts Metro, and runs
 // each Maestro flow in .maestro/ in light and dark (`xcrun simctl ui <device> appearance <mode>`),
 // reinstalling the app before every flow so each one starts clean (empty database, cold process).
@@ -16,7 +16,8 @@
 // "Cannot update a component while rendering", and iOS crashes (NSException/SIGABRT) in the app
 // process. Other yellow boxes (`WARN` lines) are listed but don't fail.
 //
-// Run as a tier of `pnpm verify --visual`; see scripts/verify.mjs. Everything this script touches is
+// Manual only: run it when the user asks (pnpm verify:visual or pnpm verify --visual). No hook, CI
+// job or default verify run starts it. Everything this script touches is
 // machine-local and gitignored (ios/, .expo/, artifacts/), and every flow starts from a fresh install
 // (flows assume an empty database and the home screen), so repeated runs are stable.
 //
@@ -132,19 +133,18 @@ function appearance(udid, mode) {
   simctl(['ui', udid, 'appearance', mode]);
 }
 
-const SMALL_NAME = 'iPhone SE (3rd generation)';
 const PRO_TYPES = deviceTypes().filter((t) => /Pro Max$/.test(t.name));
 if (!PRO_TYPES.length) die('No Pro Max simulator device type is installed (Xcode too old).');
-const LARGE_NAME = PRO_TYPES.at(-1).name; // the last Pro Max in the list is the newest Xcode's
-const devices = [SMALL_NAME, LARGE_NAME].map((name) => {
+const DEVICE_NAME = PRO_TYPES.at(-1).name; // the last Pro Max in the list is the newest Xcode's
+const devices = [DEVICE_NAME].map((name) => {
   const d = findOrCreateDevice(name);
   return { name: d.name, udid: d.udid, slug: d.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') };
 });
 
-console.log('verify-visual: booting simulators');
+console.log('verify-visual: booting the simulator');
 for (const d of devices) boot(d.udid);
 
-// ───────────────────────── one dev build, reused across both devices ─────────────────────────
+// ───────────────────────── one dev build, cached by fingerprint ─────────────────────────
 fs.mkdirSync(SCREEN_DIR, { recursive: true });
 fs.mkdirSync(LOG_DIR, { recursive: true });
 fs.mkdirSync(VISUAL_DIR, { recursive: true });
@@ -188,7 +188,7 @@ if (appPath) {
     '-workspace', path.join(iosDir, workspace),
     '-scheme', proj.scheme,
     '-configuration', 'Debug',
-    '-destination', 'generic/platform=iOS Simulator', // one simulator build installs on both devices
+    '-destination', 'generic/platform=iOS Simulator', // a generic simulator build installs on any device
     '-derivedDataPath', DERIVED_DATA,
     'build',
   ], { timeoutMs: BUILD_TIMEOUT_MS, label: 'xcodebuild' });
@@ -212,9 +212,9 @@ if (!appExecutable) die('Could not read the app executable name from the built .
 // Flows get their installs from runEveryFlow below: one terminate/uninstall/install right before
 // every flow, on the flow's own device, because flows assume an empty database and the home screen
 // (note-detail.yaml leaves a Seed note behind; the flows after it wait for the empty state).
-// --setup-only only has to leave the app installed on both devices and stop.
+// --setup-only only has to leave the app installed on the device and stop.
 if (SETUP_ONLY) {
-  console.log(`verify-visual: installing ${bundleId} on both devices`);
+  console.log(`verify-visual: installing ${bundleId} on ${DEVICE_NAME}`);
   for (const d of devices) {
     const r = freshInstall({ device: d, bundleId, appPath, simctl });
     if (!r.ok) die(r.message);
@@ -326,7 +326,7 @@ for (const file of [metroLogPath, ...deviceLogs.map((l) => l.file)]) {
 for (const l of deviceLogs) l.child.kill('SIGKILL');
 metro.kill('SIGKILL');
 fs.closeSync(metroLog);
-for (const d of devices) appearance(d.udid, 'light'); // leave the devices as they were found
+for (const d of devices) appearance(d.udid, 'light'); // leave the device as it was found
 
 if (skippedFlows.length) console.log(`verify-visual: skipped flows: ${skippedFlows.join(', ')} (set EXPO_PUBLIC_REVENUECAT_IOS_KEY to run them)`);
 if (yellow.length) {

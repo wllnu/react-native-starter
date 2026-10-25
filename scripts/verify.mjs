@@ -3,7 +3,7 @@
 //
 //   node scripts/verify.mjs          check the files changed since the merge base with main (+ untracked)
 //   node scripts/verify.mjs --full   check everything (implied when the CI env var is set)
-//   node scripts/verify.mjs --visual also run the simulator tier (scripts/verify-visual.mjs)
+//   node scripts/verify.mjs --visual also run the simulator tier (scripts/verify-visual.mjs), manual only
 //
 // Tiers are picked from the changed files; lint, types and tests run concurrently. Every failure
 // prints as one line: `rule-id: file:line message`. Exit code 1 when anything failed.
@@ -17,7 +17,7 @@ import { mapEslint } from './lib/eslint-ids.mjs';
 import { TS_LINE } from './lib/ts-errors.mjs';
 
 const FULL = process.argv.includes('--full') || Boolean(process.env.CI);
-const VISUAL = process.argv.includes('--visual'); // opt-in: a simulator run takes minutes, so the agent loop and hooks never force it
+const VISUAL = process.argv.includes('--visual'); // manual only: the user starts a simulator run, never a hook, CI or an agent on its own
 
 // ───────────────────────── small helpers ─────────────────────────
 function gitOut(args) {
@@ -381,7 +381,7 @@ async function main() {
 
   if (VISUAL && (designChanged || maestroChanged || FULL)) await guard('visual', runVisual);
   else if (VISUAL) skip('visual', 'no .tsx, DESIGN.md or .maestro flow changed');
-  else skip('visual', '--visual not passed (run pnpm verify --visual after UI changes)');
+  else skip('visual', 'manual only, run when the user asks');
 
   print();
 }

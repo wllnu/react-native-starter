@@ -1,6 +1,6 @@
 # Turn Overload into an agentic React Native starter kit
 
-Status: step 1 done (2026-10-21). Steps 2 to 4 done (2026-10-22). Step 5 done (2026-10-25): `pnpm verify:visual` with the log check and `.maestro/` flows, the `rn-reviewer` agent and the new definition of done. The Maestro flows have not run yet because Maestro was not installed. Steps 6 to 8 not started.
+Status: step 1 done (2026-10-21). Steps 2 to 4 done (2026-10-22). Step 5 done (2026-10-25): `pnpm verify:visual` with the log check and `.maestro/` flows, the `rn-reviewer` agent and the new definition of done. Reworked the same day: one simulator, visual run and reviewer on request only (see "Step 5 rework"). The Maestro flows have not run yet because Maestro was not installed. Steps 6 to 8 not started.
 Written 2026-10-21 against `overload/` (Expo SDK 57, React Native 0.86, Expo Router, pnpm) and `Agentic Coding Guardrails for React Native.md`.
 
 ## Goal
@@ -235,6 +235,13 @@ Reviewer: <n findings, n fixed, n justified>
 Not verified: <anything skipped and why>
 ```
 
+### Step 5 rework (2026-10-25)
+
+- One simulator: the newest Pro Max. The iPhone SE run is gone. Small screens are still covered by `rn-platform`'s 375-point layout rule, but no screenshot checks them now.
+- The visual run is manual only. The user starts `pnpm verify:visual` or `pnpm verify --visual`, or tells the agent to. `AGENTS.md` and the `ui-design` skill tell agents never to start it on their own. Hooks and CI never ran it, and still don't.
+- The reviewer is no longer a Claude subagent. Its instructions moved from `.claude/agents/rn-reviewer.md` to `.agents/rn-reviewer.md`. When the user asks for a review, the agent starts a Paseo agent with the "Review" profile and has it follow that file. It never runs automatically.
+- The definition of done keeps the Visual and Reviewer lines, with "not run: manual only" and "not run: on request only" as the defaults.
+
 ## Step 6. Keeping it alive
 
 - **Every correction becomes a check.** When I correct the agent, I ask whether a linter or test could have caught it. If yes, add the lint rule. If no, add a prose rule with an ID. `AGENTS.md` says this in one line, and so does the README for people who adopt the kit.
@@ -277,4 +284,4 @@ Steps 1 to 4 plus 7a give a usable kit. Step 5 is the most work and the part age
 - [x] Drizzle and SQLite stay. The notes example uses one table, and the migration test pattern ships. Original question: Drizzle and SQLite in the starter, or MMKV only with the database as an opt-in recipe? The example feature is simpler without a database. Many apps need one, though, and the migration test pattern is worth shipping.
 - [ ] Git history: this repo has 34 commits of Overload. Template copies start fresh, but if the repo goes public the history shows the app. Squash to a single initial commit before publishing?
 - [ ] Android in the visual check: the plan above is iOS only. Adding an emulator doubles the run time.
-- [ ] Should the stop hook run `verify:visual` when `.tsx` files changed, instead of leaving it to the agent? That's more reliable and slower. I'd try it on the starter and measure.
+- [x] The stop hook does not run `verify:visual`, and neither does the agent on its own. The visual run is manual only (step 5 rework). Original question: should the stop hook run `verify:visual` when `.tsx` files changed, instead of leaving it to the agent?

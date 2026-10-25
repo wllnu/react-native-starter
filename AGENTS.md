@@ -18,7 +18,7 @@ Expo ships breaking changes every SDK release. Before writing code that touches 
 ```bash
 npx expo install <package>  # the only way to add a package, it picks SDK-compatible versions
 pnpm verify                 # the gate: picks lint, types, tests, design, deps and config checks from your diff
-pnpm verify --visual        # + the simulator tier: boots two simulators and runs the .maestro/ flows
+pnpm verify --visual        # + the simulator tier (manual only): boots the newest Pro Max and runs the .maestro/ flows
 pnpm verify --full          # every check on every file, as CI runs it
 ```
 
@@ -44,7 +44,7 @@ Read the files that match your change before you edit. paseo-rules judges every 
 
 Routes live in `src/app/`. Every file there is a screen. Everything else goes in `src/features/<name>/` (imported only through its `index.ts`) or `src/shared/`. `src/features/notes` is the reference feature. Copy its layout.
 
-UI work: verify with `pnpm verify` (it runs `node design/check.mjs`) and nothing else. Don't write your own design checks or render screens. To actually look at a screen, run `pnpm verify:visual`: it boots the simulators, runs the `.maestro/` flows and writes screenshots to `artifacts/screens/`. That is the only sanctioned way to get screenshots, and it does not end the rule against hand-rolled screenshot loops or ad-hoc simctl scripting. Add a `.maestro/` flow for a new screen in the same change. After editing `DESIGN.md`, run `node design/check.mjs build`.
+UI work: verify with `pnpm verify` (it runs `node design/check.mjs`) and nothing else. Don't write your own design checks or render screens. To actually look at a screen, the user runs `pnpm verify:visual` (or `pnpm verify --visual`): it boots one simulator, the newest Pro Max, runs the `.maestro/` flows and writes screenshots to `artifacts/screens/`. Run it yourself only when the user asks you to in this task. Never start it on your own, not even after UI changes. That is the only sanctioned way to get screenshots, and it does not end the rule against hand-rolled screenshot loops or ad-hoc simctl scripting. Add a `.maestro/` flow for a new screen in the same change. After editing `DESIGN.md`, run `node design/check.mjs build`.
 
 When a check fails, fix the cause. Never disable, skip or delete the check or its test. An `eslint-disable` comment needs a reason after `--`.
 
@@ -54,9 +54,11 @@ When a check fails, fix the cause. Never disable, skip or delete the check or it
 
 ```
 Verified: pnpm verify (tiers: lint, types, related tests, design)
-Visual: <screens checked, or "not run: logic only">
-Reviewer: <n findings, n fixed, n justified>
+Visual: <screens checked, or "not run: manual only">
+Reviewer: <n findings, n fixed, n justified, or "not run: on request only">
 Not verified: <anything skipped and why>
 ```
 
-Run the rn-reviewer agent on your diff before you finish, and fix each finding or write down why not, tallied in the Reviewer line. Without subagent support (opencode, pi), read `.claude/agents/rn-reviewer.md` and apply its checks to your own diff yourself.
+### Review on request
+
+Run the reviewer only when the user asks for a review. Never run it on your own, at the end of a task or otherwise. When asked, start a Paseo agent: call `list_profiles`, take the profile named "Review" and copy its provider, model, `modeId` and `thinkingOptionId` into `create_agent`, with the initial prompt "Read `.agents/rn-reviewer.md` and follow it. Review the diff since `git merge-base HEAD main`, plus untracked files." Wait for it to finish, then fix each finding or write down why not, tallied in the Reviewer line. Without Paseo, read `.agents/rn-reviewer.md` and apply its checks to your own diff yourself.
