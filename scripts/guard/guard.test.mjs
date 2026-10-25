@@ -11,6 +11,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { checkBash } from './pre-bash.mjs';
 import { checkEdit } from './pre-edit.mjs';
+import { checkRead } from './pre-read.mjs';
+import { fromOpencode, fromPi, preToolUse } from './adapters.mjs';
 
 const ED = ['eslint', '-disable'].join('');
 const DI = ['design', '-ignore'].join('');
@@ -70,6 +72,14 @@ const BLOCKED = [
   ['git rm -r src/app/x.test.tsx', 'guard/keep-tests'],
   ['cat f | rm src/app/x.test.ts', 'guard/keep-tests'],
   ['pnpm install --frozen-lockfile\nrm src/app/x.test.ts', 'guard/keep-tests'],
+
+  ['cat .env', 'guard/no-env-read'],
+  ['cat ./app/.env.local', 'guard/no-env-read'],
+  ['source .envrc', 'guard/no-env-read'],
+  ['head -n 5 "/Users/me/x/.env.production"', 'guard/no-env-read'],
+  ['node --env-file=.env -e 1', 'guard/no-env-read'],
+  ['echo $(<.env)', 'guard/no-env-read'],
+  ['ls && grep KEY .env*', 'guard/no-env-read'],
 ];
 
 const ALLOWED = [
@@ -96,6 +106,9 @@ const ALLOWED = [
   'git rm -r --cached x',
   'echo "expo eject"',
   'pnpm install --frozen-lockfile && npx expo install expo-image',
+  'cat .env.example',
+  'cat expo-env.d.ts',
+  'git commit -m "ignore .env files"',
   '',
 ];
 
@@ -182,4 +195,70 @@ test('checkEdit allows missing tool input fields', () => {
   assert.equal(checkEdit('MultiEdit', { file_path: `${root}/src/b.ts` }, root), null); // no edits
   assert.equal(checkEdit('Write', {}, root), null); // no file_path
   assert.equal(checkEdit('Write', null, root), null);
+});
+// ───────────────────────── checkRead ─────────────────────────
+test('checkRead blocks .env* files through Read and Grep', () => {
+  const rule = /^guard\/no-env-read: /;
+  for (const file_path of ['.env', `${root}/.env`, `${root}/app/.env.local`, `${root}/.envrc`, 'C:\\app\\.env']) {
+    assert.match(checkRead('Read', { file_path }), rule, file_path);
+  }
+  assert.match(checkRead('Grep', { pattern: 'KEY', path: `${root}/.env` }), rule);
+  assert.match(checkRead('Grep', { pattern: 'KEY', glob: '**/.env*' }), rule);
+});
+
+test('checkRead allows other files and .env.example', () => {
+  assert.equal(checkRead('Read', { file_path: `${root}/.env.example` }), null);
+  assert.equal(checkRead('Read', { file_path: `${root}/expo-env.d.ts` }), null);
+  assert.equal(checkRead('Read', { file_path: `${root}/.env/../src/a.ts` }), null); // last segment only
+  assert.equal(checkRead('Grep', { pattern: '.env', path: `${root}/src` }), null);
+  assert.equal(checkRead('Write', { file_path: `${root}/.env` }), null); // not a read tool
+  assert.equal(checkRead('Read', {}), null);
+  assert.equal(checkRead('Read', null), null);
+});
+
+// ───────────────────────── adapters (pi, opencode) ─────────────────────────
+test('fromPi maps bash, write and edit onto the Claude Code tool shapes', () => {
+  assert.deepEqual(fromPi('bash', { command: 'ls' }, root), [{ tool_name: 'Bash', tool_input: { command: 'ls' } }]);
+  assert.deepEqual(fromPi('write', { path: 'src/a.ts', content: 'x' }, root), [{ tool_name: 'Write', tool_input: { file_path: `${root}/src/a.ts`, content: 'x' } }]);
+  assert.deepEqual(fromPi('edit', { path: '@src/a.ts', edits: [{ oldText: 'a', newText: 'b' }] }, root), [{ tool_name: 'MultiEdit', tool_input: { file_path: `${root}/src/a.ts`, edits: [{ old_string: 'a', new_string: 'b' }] } }]);
+  assert.deepEqual(fromPi('read', { path: 'src/a.ts' }, root), [{ tool_name: 'Read', tool_input: { file_path: `${root}/src/a.ts` } }]);
+  assert.deepEqual(fromPi('grep', { pattern: 'x' }, root), []);
+  assert.deepEqual(fromPi('bash', undefined, root), []);
+});
+
+test('fromOpencode maps shell, write, edit and every patch operation', () => {
+  assert.deepEqual(fromOpencode('shell', { command: 'ls', workdir: '/x' }, root), [{ tool_name: 'Bash', tool_input: { command: 'ls' } }]);
+  assert.deepEqual(fromOpencode('edit', { path: `${root}/src/a.ts`, oldString: 'a', newString: 'b' }, root), [{ tool_name: 'Edit', tool_input: { file_path: `${root}/src/a.ts`, old_string: 'a', new_string: 'b' } }]);
+  const patchText = [
+    '*** Begin Patch',
+    '*** Add File: src/new.ts',
+    '+const a = 1;',
+    '*** Update File: src/old.ts',
+    '*** Move to: src/moved.ts',
+    '@@ function f() {',
+    ' keep',
+    '-gone',
+    '+added',
+    '*** Delete File: src/x.test.ts',
+    '*** End Patch',
+  ].join('\n');
+  assert.deepEqual(fromOpencode('patch', { patchText }, root), [
+    { tool_name: 'Write', tool_input: { file_path: `${root}/src/new.ts`, content: 'const a = 1;' } },
+    { tool_name: 'Edit', tool_input: { file_path: `${root}/src/old.ts`, old_string: 'keep\ngone', new_string: 'keep\nadded' } },
+    { tool_name: 'Edit', tool_input: { file_path: `${root}/src/moved.ts`, old_string: 'keep\ngone', new_string: 'keep\nadded' } },
+    { tool_name: 'Bash', tool_input: { command: 'rm "src/x.test.ts"' } },
+    { tool_name: 'Write', tool_input: { file_path: `${root}/src/x.test.ts`, content: '' } },
+  ]);
+  assert.deepEqual(fromOpencode('read', { path: 'a' }, root), [{ tool_name: 'Read', tool_input: { file_path: `${root}/a` } }]);
+  assert.deepEqual(fromOpencode('glob', { pattern: 'a' }, root), []);
+});
+
+test('preToolUse runs the real guard scripts on translated calls', async () => {
+  const repo = process.cwd();
+  assert.match(await preToolUse(fromPi('bash', { command: 'git push --force' }, repo), repo), /^guard\/no-force-push: /);
+  assert.match(await preToolUse(fromOpencode('write', { path: 'ios/Podfile', content: 'x' }, repo), repo), /^rn-native-deps\/no-native-edits: /);
+  assert.match(await preToolUse(fromOpencode('patch', { patchText: '*** Delete File: src/a.test.ts' }, repo), repo), /^guard\/keep-tests: /);
+  assert.match(await preToolUse(fromPi('read', { path: '.env' }, repo), repo), /^guard\/no-env-read: /);
+  assert.equal(await preToolUse(fromOpencode('read', { path: 'package.json' }, repo), repo), null);
+  assert.equal(await preToolUse(fromPi('bash', { command: 'git status' }, repo), repo), null);
 });

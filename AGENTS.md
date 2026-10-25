@@ -23,7 +23,7 @@ pnpm verify --full          # every check on every file, as CI runs it
 
 Each `pnpm verify` failure prints as `rule-id: file:line message`. Search `.rules/`, `eslint.config.js`, `src/config.test.ts` or `scripts/guard/` for the rule ID to find out why it exists.
 
-Hooks in `.claude/settings.json` run the scripts in `scripts/guard/`: ESLint and `tsc` after every edit, `pnpm verify` before the turn ends, and a block on forbidden commands and edits. The git pre-commit hook runs `pnpm verify` too.
+Hooks in `.claude/settings.json`, `.opencode/plugins/guard.js` and `.pi/extensions/guard.js` run the scripts in `scripts/guard/`: ESLint and `tsc` after every edit, `pnpm verify` before the turn ends, and a block on forbidden commands, edits and reads of `.env*` files. The git pre-commit hook runs `pnpm verify` too.
 
 EAS CLI runs as `npx eas-cli@latest <command>`.
 

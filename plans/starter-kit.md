@@ -158,8 +158,9 @@ The logic lives in `scripts/guard/*.mjs`. `.claude/settings.json` only wires the
 
 - **PostToolUse on `Edit|Write|MultiEdit`**: `scripts/guard/on-edit.mjs` reads the file path from the hook's stdin JSON and runs ESLint on that file. Exit 2 sends the errors back into the turn. `tsc` runs here too if a warm incremental run stays under about 3 seconds on the starter. Otherwise it waits for the stop hook.
 - **Stop**: `scripts/guard/on-stop.mjs` runs `pnpm verify` and exits 2 with the failures, so the agent can't end the turn. It checks `stop_hook_active` and lets the second attempt through with a warning, so a check that can't pass doesn't loop forever.
-- **PreToolUse on Bash**: block `expo eject`, `git commit --no-verify`, `git push --force`, `pnpm add`/`npm install <pkg>`/`yarn add` (use `npx expo install`), and `rm`/`git rm` on `*.test.ts(x)` files.
+- **PreToolUse on Bash**: block `expo eject`, `git commit --no-verify`, `git push --force`, `pnpm add`/`npm install <pkg>`/`yarn add` (use `npx expo install`), and `rm`/`git rm` on `*.test.ts(x)` files, and any command that names a `.env*` file.
 - **PreToolUse on `Edit|Write`**: block paths under `ios/` and `android/`, and block new `eslint-disable` or `design-ignore` comments that have no reason. Lint catches the first case too, but blocking at write time saves a round trip.
+- **PreToolUse on `Read|Grep`** (`pre-read.mjs`): block `.env*` files, which hold secrets. `.env.example` stays readable. pi and opencode `read` calls go through the same script. The Bash check matches strings, so it stops accidents, not someone determined to get around it.
 - `permissions.deny` in `.claude/settings.json` for `Edit(ios/**)` and `Edit(android/**)` as a second layer.
 - A git pre-commit hook through `core.hooksPath` pointing at `.githooks/pre-commit`, which runs `pnpm verify`. No husky or lefthook. `pnpm prepare` sets the path.
 
@@ -175,6 +176,15 @@ The logic lives in `scripts/guard/*.mjs`. `.claude/settings.json` only wires the
 - The ESLint rule-ID map and the `tsc` line regex moved to `scripts/lib/`, so `verify` and `on-edit` print failures the same way.
 - `verify` has a new `guards` tier that runs `node --test` on `scripts/**/*.test.mjs` when anything under `scripts/` changes. The jest-expo preset doesn't load plain `.mjs`, which is why these tests use `node:test`.
 - `.githooks/pre-commit` runs `pnpm verify`. `pnpm prepare` points `core.hooksPath` at it and does nothing outside a git repo.
+
+### opencode and pi (2026-10-23)
+
+- `.opencode/plugins/guard.js` (opencode 2.x plugin API) and `.pi/extensions/guard.js` wire the same four scripts. `scripts/guard/adapters.mjs` turns their tool calls into Claude Code's hook JSON and runs the scripts unchanged, so the rule IDs and messages match.
+- Tool names differ: opencode has `shell`, `edit`, `write` and `patch`, and pi has `bash`, `edit` (with an `edits[]` array) and `write`. An opencode patch is split per file, and deleting a test file through a patch counts as `rm`, so `guard/keep-tests` still applies.
+- Blocks: opencode throws from `tool` `execute.before`, and pi returns `{ block, reason }` from `tool_call`. Edit feedback is added to the tool result.
+- Stop gate: pi continues the run from `agent_before_settle`. opencode has no stop hook, so the plugin waits for `session.execution.succeeded` and sends the failures as a new prompt. That needs a running server (the TUI or `opencode serve`). One-shot `opencode run --standalone` exits before the follow-up runs.
+- pi loads project extensions only after you trust the folder (`/trust`). opencode 2.1.4 loaded `.opencode/plugins/` without asking in `opencode run` and `opencode serve`. I did not check the TUI.
+- Not covered yet: Codex and Cursor. The opencode stop gate probably also fires when a subagent session finishes (not tested), and its give-up warning goes to opencode's log instead of the TUI.
 
 ## Step 5. Runtime checks and review
 

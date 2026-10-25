@@ -4,10 +4,12 @@
 // Reads the hook JSON on stdin. A block writes one line to stderr as `rule-id: message` and exits 2;
 // clean or unparseable input allows silently with exit 0. The decision lives in checkBash() so unit
 // tests can call it directly. Blocks: expo eject, git commit --no-verify, git push --force, package
-// installs that bypass `npx expo install`, and rm/git rm of *.test.ts(x). Node 18+, built-ins only.
+// installs that bypass `npx expo install`, rm/git rm of *.test.ts(x), and any command naming a .env*
+// file. Node 18+, built-ins only.
 
 import { pathToFileURL } from 'node:url';
 import fs from 'node:fs';
+import { ENV_READ, isEnvPath } from './pre-read.mjs';
 
 const CNG = ['rn-native-deps/no-native-edits', 'ios/ and android/ are generated (CNG). Put native config in app.config.ts or a config plugin.'];
 const NO_VERIFY = ['guard/no-verify', "don't skip the pre-commit hook. Fix what pnpm verify reports."];
@@ -143,7 +145,16 @@ function checkKeepTests(tokens) {
   return tokens.slice(from).some((t) => !t.startsWith('-') && TEST_PATH.test(t)) ? KEEP_TESTS : null;
 }
 
-const CHECKS = [checkExpoInstall, checkExpoEject, checkNoVerify, checkForcePush, checkKeepTests];
+// Any program can read a file (cat, source, grep, node --env-file=), so every argument naming a .env*
+// file blocks: the part after a `=` or `<`, as in --env-file=.env and $(<.env). Arguments with spaces
+// are prose (a commit message), not paths.
+// lazy: string-level, so `cat .e""nv` or a variable holding the path gets through. Upgrade: a sandbox
+// that denies the files themselves.
+function checkEnvRead(tokens) {
+  return tokens.some((t) => !/\s/.test(t) && isEnvPath(t.split(/[=<]/).pop())) ? ENV_READ : null;
+}
+
+const CHECKS = [checkExpoInstall, checkExpoEject, checkNoVerify, checkForcePush, checkKeepTests, checkEnvRead];
 
 // The decision: one stderr line for the first violated rule in the command, or null to allow.
 export function checkBash(command) {
