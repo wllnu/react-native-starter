@@ -1,0 +1,21 @@
+# Template for a new screen's flow. Files starting with _ are partials and never run; copy this
+# file, rename it to the screen's route name, and fill in the navigation steps. The rule: the flow
+# opens the app, navigates to one screen, waits for content that proves it arrived, and takes one
+# screenshot there. Flags (visibility strings, timeouts) stay out unless a screen genuinely needs a
+# hidden setting, like paywall.yaml needs the RevenueCat key.
+appId: com.example.starter.dev
+name: <screen-name>
+---
+- openLink:
+    link: exp+starter://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
+- runFlow:
+    when:
+      visible: "Open in"
+    commands:
+      - tapOn: "Open"
+- tapOn: "<tab label or control that reaches the screen>"
+- extendedWaitUntil:
+    visible: "<text that only the target screen shows>"
+    timeout: 30000
+- takeScreenshot:
+    path: shot

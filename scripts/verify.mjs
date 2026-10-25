@@ -3,6 +3,7 @@
 //
 //   node scripts/verify.mjs          check the files changed since the merge base with main (+ untracked)
 //   node scripts/verify.mjs --full   check everything (implied when the CI env var is set)
+//   node scripts/verify.mjs --visual also run the simulator tier (scripts/verify-visual.mjs)
 //
 // Tiers are picked from the changed files; lint, types and tests run concurrently. Every failure
 // prints as one line: `rule-id: file:line message`. Exit code 1 when anything failed.
@@ -16,6 +17,7 @@ import { mapEslint } from './lib/eslint-ids.mjs';
 import { TS_LINE } from './lib/ts-errors.mjs';
 
 const FULL = process.argv.includes('--full') || Boolean(process.env.CI);
+const VISUAL = process.argv.includes('--visual'); // opt-in: a simulator run takes minutes, so the agent loop and hooks never force it
 
 // ───────────────────────── small helpers ─────────────────────────
 function gitOut(args) {
@@ -75,12 +77,13 @@ const existing = changed.filter((f) => fs.existsSync(path.join(root, f)));
 const codeFiles = existing.filter((f) => /\.(ts|tsx|js|mjs|cjs)$/.test(f));
 const srcCode = existing.filter((f) => /^src\/.+\.(ts|tsx)$/.test(f));
 const designChanged = existing.some((f) => f === 'DESIGN.md' || /\.tsx$/.test(f));
+const maestroChanged = existing.some((f) => f.startsWith('.maestro/'));
 const depsChanged = ['package.json', 'pnpm-lock.yaml'].some((f) => changed.includes(f));
 const scriptsChanged = existing.some((f) => f.startsWith('scripts/'));
 const configChanged = ['app.config.ts', 'eas.json'].some((f) => changed.includes(f)) || changed.some((f) => f.startsWith('plugins/'));
 
 // ───────────────────────── findings ─────────────────────────
-const TIER_ORDER = { lint: 0, types: 1, tests: 2, guards: 2.5, design: 3, deps: 4, config: 5, native: 6, secrets: 7 };
+const TIER_ORDER = { lint: 0, types: 1, tests: 2, guards: 2.5, design: 3, visual: 3.5, deps: 4, config: 5, native: 6, secrets: 7 };
 const failures = [];
 const warnings = [];
 const ran = [];
@@ -296,6 +299,17 @@ async function runConfig() {
   await runPrebuild();
 }
 
+// Simulator tier behind --visual. UI changes = any .tsx, DESIGN.md or .maestro flow.
+async function runVisual() {
+  ran.push('visual');
+  const r = await runCapture('node', ['scripts/verify-visual.mjs'], { timeoutMs: 60 * 60 * 1000 });
+  if (r.code !== 0) {
+    failures.push(fail('visual', 'verify/visual-failed', undefined, undefined, firstErrorLine(r)));
+    // The visual run is long; keep more of its output so the agent can fix the failing flow.
+    console.log(`${r.stdout || ''}${r.stderr || ''}`.split('\n').slice(-60).join('\n'));
+  }
+}
+
 // ───────────────────────── inline checks ─────────────────────────
 const SECRET_RE = /EXPO_PUBLIC_\w*(SECRET|PRIVATE|PASSWORD|SERVICE_ROLE)\w*/;
 const BINARY_EXT = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico', 'icns', 'pdf', 'zip', 'tgz', 'gz', 'bz2', '7z', 'ttf', 'otf', 'woff', 'woff2', 'eot', 'mp4', 'mov', 'm4v', 'avi', 'mkv', 'mp3', 'wav', 'aac', 'ogg', 'flac', 'wasm', 'bin', 'dat', 'sqlite', 'db', 'node']);
@@ -364,6 +378,10 @@ async function main() {
 
   if (configChanged || FULL) await guard('config', runConfig);
   else skip('config', 'no app.config.ts, eas.json or plugins/ change');
+
+  if (VISUAL && (designChanged || maestroChanged || FULL)) await guard('visual', runVisual);
+  else if (VISUAL) skip('visual', 'no .tsx, DESIGN.md or .maestro flow changed');
+  else skip('visual', '--visual not passed (run pnpm verify --visual after UI changes)');
 
   print();
 }

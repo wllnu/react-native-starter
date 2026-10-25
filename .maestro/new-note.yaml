@@ -1,0 +1,29 @@
+# The "New note" form sheet. Read this before editing a flow:
+#   - Every flow targets the development build (APP_VARIANT=development, bundle id .dev).
+#   - The link opens the project through the dev client, which loads JS from Metro on
+#     localhost:8081. Metro must be running or the flow dead-ends on the dev client home.
+#   - Screens have no testIDs yet; flows match visible text from src/shared/i18n/en.ts.
+#     If a flow tap becomes ambiguous, give the view an accessibilityLabel or testID instead of
+#     relying on positional taps.
+#   - Each flow ends on the screen it verifies and calls takeScreenshot; scripts/verify-visual.mjs
+#     moves the file to artifacts/screens/<flow>-<device>-<light|dark>.png.
+# A new screen adds a flow in the same change. Copy this file and rename it to the screen.
+appId: com.example.starter.dev
+name: new-note
+---
+- openLink:
+    link: exp+starter://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
+- runFlow:
+    when:
+      visible: "Open in"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible: "Your notes show up here."
+    timeout: 30000
+- tapOn: "Add note"
+- extendedWaitUntil:
+    visible: "New note"
+    timeout: 10000
+- takeScreenshot:
+    path: shot

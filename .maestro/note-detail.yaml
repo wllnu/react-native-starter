@@ -1,0 +1,33 @@
+# One note. Creates a note first, because the detail screen needs one, then opens it.
+appId: com.example.starter.dev
+name: note-detail
+---
+- openLink:
+    link: exp+starter://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
+- runFlow:
+    when:
+      visible: "Open in"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible: "Your notes show up here."
+    timeout: 30000
+- tapOn: "Add note"
+- extendedWaitUntil:
+    visible: "New note"
+    timeout: 10000
+- tapOn: "e.g. Groceries"
+- inputText: "Seed note"
+- hideKeyboard
+- tapOn: "Add note"
+- extendedWaitUntil:
+    visible: "Seed note"
+    timeout: 10000
+- tapOn: "Seed note"
+- extendedWaitUntil:
+    visible: "Delete note"
+    timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot:
+    path: shot

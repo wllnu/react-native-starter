@@ -1,0 +1,18 @@
+# The notes tab. On a fresh install this is the empty state; once a note exists the row shows here.
+# State note: notes persist until the app is reinstalled, which scripts/verify-visual.mjs does on
+# every run, so flows can assume the list starts empty.
+appId: com.example.starter.dev
+name: notes-list
+---
+- openLink:
+    link: exp+starter://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
+- runFlow:
+    when:
+      visible: "Open in"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible: "Your notes show up here."
+    timeout: 30000
+- takeScreenshot:
+    path: shot

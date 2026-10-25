@@ -9,6 +9,6 @@ description: Design rules for any UI work in this repo. Use whenever building, c
 2. **While building:** no raw hex, no sizes or spacing outside the scale, no arbitrary Tailwind values, nothing from the Don'ts list.
 3. **When done:** run `node design/check.mjs` once. It checks only the lines you changed. Fix what it reports and run it again until it passes. A deliberate exception gets a `design-ignore: <reason>` comment.
 
-This is the only design verification step. Don't write your own check scripts, greps or screenshot loops, and don't render pages unless the user asks.
+This is the only design verification step. Don't write your own check scripts or greps, and don't render pages unless the user asks. To look at a real screen on a device, add or reuse a flow in `.maestro/` and run `pnpm verify:visual` — that is the only sanctioned way to get screenshots, and hand-rolled screenshot loops are still off limits. `design/check.mjs` still checks your changed lines; the screenshots are for judgment (composition, spacing, dark mode), not a replacement.
 
 If you change `DESIGN.md`, run `node design/check.mjs build` to regenerate the theme files.

@@ -1,0 +1,22 @@
+# The settings tab: the reports switch and (with a RevenueCat key) the Pro row.
+appId: com.example.starter.dev
+name: settings
+---
+- openLink:
+    link: exp+starter://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
+- runFlow:
+    when:
+      visible: "Open in"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible: "Your notes show up here."
+    timeout: 30000
+- tapOn: "Settings"
+- extendedWaitUntil:
+    visible: "Usage and crash reports"
+    timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot:
+    path: shot
