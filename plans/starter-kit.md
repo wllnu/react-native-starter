@@ -1,6 +1,6 @@
 # Turn Overload into an agentic React Native starter kit
 
-Status: step 1 done (2026-10-21). Steps 2 to 4 done (2026-10-22). Steps 5 to 8 not started.
+Status: step 1 done (2026-10-21). Steps 2 to 4 done (2026-10-22). Step 5 partially done (2026-10-25): the reviewer agent (`.claude/agents/rn-reviewer.md`) and the `AGENTS.md` definition of done shipped on branch `step5-reviewer`; visual and log checks pending. Steps 6 to 8 not started.
 Written 2026-10-21 against `overload/` (Expo SDK 57, React Native 0.86, Expo Router, pnpm) and `Agentic Coding Guardrails for React Native.md`.
 
 ## Goal

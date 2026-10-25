@@ -52,6 +52,10 @@ When a check fails, fix the cause. Never disable, skip or delete the check or it
 `pnpm verify` passes. End every task with:
 
 ```
-Verified: <commands run>
+Verified: pnpm verify (tiers: lint, types, related tests, design)
+Visual: <screens checked, or "not run: logic only">
+Reviewer: <n findings, n fixed, n justified>
 Not verified: <anything skipped and why>
 ```
+
+Run the rn-reviewer agent on your diff before you finish, and fix each finding or write down why not, tallied in the Reviewer line. Without subagent support (opencode, pi), read `.claude/agents/rn-reviewer.md` and apply its checks to your own diff yourself.
