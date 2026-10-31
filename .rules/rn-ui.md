@@ -55,10 +55,10 @@ Followed when: every list key in the changed lines comes from the item's id fiel
 
 Good:
 ```tsx
-<FlashList data={sets} renderItem={renderSet} keyExtractor={(item) => item.id} />
+<FlatList data={sets} renderItem={renderSet} keyExtractor={(item) => item.id} />
 ```
 
 Bad:
 ```tsx
-<FlashList data={sets} renderItem={renderSet} keyExtractor={(item) => item.title} />
+<FlatList data={sets} renderItem={renderSet} keyExtractor={(item) => item.title} />
 ```

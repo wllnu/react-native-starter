@@ -1,4 +1,4 @@
-import { StyleSheet, TextInput, View, type TextInputProps, type TextStyle } from "react-native";
+import { StyleSheet, TextInput, View, type TextInputProps } from "react-native";
 
 import { radius, spacing, touchMin, useFocusRing, useTheme } from "@/shared/theme";
 
@@ -40,7 +40,7 @@ export function Field({ label, hint, error, onFocus, onBlur, ...input }: FieldPr
           typeStyle("body"),
           styles.well,
           { backgroundColor: colors.canvas, color: colors.ink },
-          focus.style as TextStyle | null, // the ring style targets a TextInput, so it must typecheck as TextStyle
+          focus.style,
         ]}
       />
       {error ? (

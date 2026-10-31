@@ -3,6 +3,7 @@
 import { Platform } from 'react-native';
 import Purchases from 'react-native-purchases';
 import type { CustomerInfo, PurchasesPackage } from 'react-native-purchases';
+import { z } from 'zod';
 import { setPro } from './store';
 
 // Re-exported for index.ts, which is the only surface other files may import.
@@ -17,7 +18,8 @@ const hasPro = (customerInfo: CustomerInfo): boolean => customerInfo.entitlement
 
 // A user cancel comes through as an error with code PURCHASE_CANCELLED_ERROR, which the SDK normalizes to
 // userCancelled true on every rejection it passes on.
-const isCancelled = (error: unknown): boolean => (error as { userCancelled?: boolean | null })?.userCancelled === true;
+const cancelledError = z.object({ userCancelled: z.literal(true) });
+const isCancelled = (error: unknown): boolean => cancelledError.safeParse(error).success;
 
 // lazy: iOS only. Add an Android key and configure with it on Android to sell there (see paywallEnabled in store.ts).
 /** Configures RevenueCat once, from the root layout. A no-op off iOS, without a key, or when already configured. */

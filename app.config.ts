@@ -10,7 +10,7 @@ const app = {
   // Reverse-DNS prefix you own. The build variant adds .dev or .preview.
   bundleId: "com.example.starter",
   // Set by `eas init`. Leave undefined until then.
-  easProjectId: undefined as string | undefined,
+  easProjectId: undefined,
 };
 
 // eas.json sets APP_VARIANT per build profile. Unset means production.
@@ -19,13 +19,14 @@ const suffixes = {
   preview: ".preview",
   production: "",
 } as const;
+const isVariant = (value: string): value is keyof typeof suffixes => Object.hasOwn(suffixes, value);
 const variant = process.env.APP_VARIANT ?? "production";
-if (!(variant in suffixes)) {
+if (!isVariant(variant)) {
   throw new Error(
     `APP_VARIANT must be development, preview or production, got "${variant}"`,
   );
 }
-const suffix = suffixes[variant as keyof typeof suffixes];
+const suffix = suffixes[variant];
 const id = `${app.bundleId}${suffix}`;
 
 const config: ExpoConfig = {
@@ -114,7 +115,7 @@ const config: ExpoConfig = {
           [
             "@sentry/react-native/expo",
             { url: "https://sentry.io/", organization: process.env.SENTRY_ORG, project: process.env.SENTRY_PROJECT },
-          ] as [string, object],
+          ] satisfies [string, object],
         ]
       : []),
   ],

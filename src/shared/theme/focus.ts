@@ -7,13 +7,14 @@ import type { ViewStyle } from "react-native";
  */
 export function useFocusRing(color: string, inset = false) {
   const [focused, setFocused] = useState(false);
-  const style: ViewStyle | null = focused
-    ? {
+  // satisfies instead of a ViewStyle annotation keeps the narrow type, which a TextInput style accepts too.
+  const style = focused
+    ? ({
         outlineStyle: "solid",
         outlineColor: color,
         outlineWidth: 2, // design-ignore: the focus ring is 2px (DESIGN.md Accessibility)
         outlineOffset: inset ? -4 : 2, // design-ignore: 2px offset, or inset by space 1 where a parent clips
-      }
+      } satisfies ViewStyle)
     : null;
   return {
     style,

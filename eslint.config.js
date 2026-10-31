@@ -152,6 +152,15 @@ module.exports = defineConfig([
     },
   },
   {
+    // A type assertion tells the compiler to stop checking, so app code narrows with Zod, `satisfies` or a
+    // type guard instead; `as const` stays allowed. Tests keep assertions to stand in partial SDK objects.
+    files: ["**/*.ts", "**/*.tsx"],
+    ignores: ["**/*.test.ts", "**/*.test.tsx", "**/test-support.ts"],
+    rules: {
+      "@typescript-eslint/consistent-type-assertions": ["error", { assertionStyle: "never" }],
+    },
+  },
+  {
     // rn-monetization/purchases-in-pro: the pro feature is the one folder allowed to import RevenueCat;
     // a later config block replaces the whole rule config, hence the shared array.
     files: ["src/features/pro/**"],
