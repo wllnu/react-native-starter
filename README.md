@@ -59,6 +59,8 @@ Users can turn Sentry and Aptabase off together with the switch in Settings.
 
 Every correction becomes a check. When you correct the agent, ask whether a linter or test could have caught the mistake. If one could, add a lint rule to `eslint.config.js` whose message starts with a rule ID, or an assertion to `src/config.test.ts`. If not, add a rule with an ID to the matching file in `.rules/`. `AGENTS.md` tells the agent to offer this whenever you correct it.
 
+To check an existing app against the starter, run the `starter-check` skill in it. It clones this repository from GitHub, so the comparison is always against what's on `main`, and lists every missing or outdated guard file, script, hook and rule. To make the skill available in every project, link it once: `ln -s "$PWD/.agents/skills/starter-check" ~/.claude/skills/starter-check`.
+
 When you upgrade Expo or `eslint-config-expo`, look for new lint rules that cover a rule in `.rules/`. Move each one you find to `eslint.config.js` and delete the prose, so the same rule isn't judged twice.
 
 ## Database changes
